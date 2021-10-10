@@ -32,6 +32,7 @@ public class Template {
 		this.b = b;
 	}
 }
+
 ```
 
 <br />
