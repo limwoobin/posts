@@ -16,9 +16,9 @@
 > - [**영속성 컨텍스트 특징**](#영속성-컨텍스트-특징)
 >
 >   - [1차 캐시](#1차-캐시)
->   - [변경 감지 (Dirty Checking)](#변경-감지-Dirty-Checking)
+>   - [변경 감지 (Dirty Checking)](#변경-감지-dirty-checking)
 >   - [동일성 보장](#동일성-보장)
->   - [Lazy / Eager Loading](#Lazy--Eager-Loading)
+>   - [Lazy / Eager Loading](#lazy--eager-loading)
 >
 > - [**주의 사항**](#주의-사항)
 >

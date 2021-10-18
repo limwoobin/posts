@@ -69,8 +69,3 @@ public class Template {
 
 ...
 <br>
-
-- #### **1차 캐시**
-- #### **변경 감지 (Dirty Checking)**
-- #### **동일성 보장**
-- #### **Lazy / Eager Loading**
