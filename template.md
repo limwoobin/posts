@@ -9,7 +9,7 @@
 >   - [content 2](#content-2)
 > - [**Subject 3**](#subject-3)
 >
->   - [content 3 / 4](#content-3-/-4)
+>   - [content 3 / 4](#content-3--4)
 >
 >     <br>
 
@@ -69,3 +69,8 @@ public class Template {
 
 ...
 <br>
+
+- #### **1차 캐시**
+- #### **변경 감지 (Dirty Checking)**
+- #### **동일성 보장**
+- #### **Lazy / Eager Loading**

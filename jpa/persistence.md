@@ -8,7 +8,7 @@
 >
 > - [**엔티티의 생명주기**](#엔티티의-생명주기)
 >
->   - [비영속 (new/tansient)](#비영속-new/transient)
+>   - [비영속 (new/tansient)](#비영속-newtransient)
 >   - [영속(managed)](#영속-managed)
 >   - [준영속(detached)](#준영속-detached)
 >   - [삭제(removed)](#삭제-removed)
@@ -16,9 +16,9 @@
 > - [**영속성 컨텍스트 특징**](#영속성-컨텍스트-특징)
 >
 >   - [1차 캐시](#1차-캐시)
->   - [변경 감지 (Dirty Checking)](#변경감지-Dirty-Checking)
+>   - [변경 감지 (Dirty Checking)](#변경-감지-Dirty-Checking)
 >   - [동일성 보장](#동일성-보장)
->   - [Lazy / Eager Loading](#Lazy-/-Eager-Loading)
+>   - [Lazy / Eager Loading](#Lazy--Eager-Loading)
 >
 > - [**주의 사항**](#주의-사항)
 >
@@ -155,7 +155,7 @@ public void deleteTest(Long id) {
 # **영속성 컨텍스트 특징**
 
 - #### **1차 캐시**
-- #### **변경감지 (Dirty Checking)**
+- #### **변경 감지 (Dirty Checking)**
 - #### **동일성 보장**
 - #### **Lazy / Eager Loading**
 
