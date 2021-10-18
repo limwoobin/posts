@@ -8,18 +8,23 @@
 >
 > - [**엔티티의 생명주기**](#엔티티의-생명주기)
 >
->   - [비영속(new / tansient)](#비영속)
->   - [영속(managed)](#영속)
->   - [준영속(detached)](#준영속)
->   - [삭제(removed)](#삭제)
+>   - [비영속 (new/tansient)](#비영속-new/transient)
+>   - [영속(managed)](#영속-managed)
+>   - [준영속(detached)](#준영속-detached)
+>   - [삭제(removed)](#삭제-removed)
 >
 > - [**영속성 컨텍스트 특징**](#영속성-컨텍스트-특징)
+>
+>   - [1차 캐시](#1차-캐시)
+>   - [변경 감지 (Dirty Checking)](#변경감지-Dirty-Checking)
+>   - [동일성 보장](#동일성-보장)
+>   - [Lazy / Eager Loading](#Lazy-/-Eager-Loading)
 >
 > - [**주의 사항**](#주의-사항)
 >
 > <br>
 
-<br /><br /><br /><br /><br />
+<br /><br /><br />
 
 # **영속성 컨텍스트란 ?**
 
@@ -50,11 +55,14 @@ public class Team {
 ```
 
 <br />
-#### **비영속 (new / transient)**
+
+#### **비영속 (new/transient)**
 
 - 영속화 되기 전의 상태
 - 순수한 Entity 객체
 - EntityManager 로부터 관리받지 않는 상태
+
+<br />
 
 TeamService.java
 
@@ -113,11 +121,18 @@ public Team detachTest(Long id) {
 
 @Transactional 이 Service Layer 에 선언되어있고, osiv 가 false 인 상태에서 해당 Entity가 Presentation Layer 에 있다면 준영속 상태가 될 수 있습니다.  
 하지만 실무에선 일반적으로 Service Layer , Presentation Layer 각각 다른 Model 을 사용하게 되고 @Transactional 은 Service Layer 에 선언하는 경우가 일반적이어서 준영속 상태를 만날 일이 흔치는 않습니다.
+<br /><br />
 
-> **비영속과의 차이?**  
+> <br>
+>
+> **비영속과의 차이?**
+>
+> <hr>
 > 두 상태 모두 영속성 컨텍스트의 관리를 받지 않는다는 점은 동일합니다.  
 > 다만 비영속은 한번도 저장되지 않았던 객체이고, 준영속은 저장이 되어 영속성 컨텍스트의 관리를 받다가 분리된 객체입니다.  
 > 따라서 의도적으로 준영속 entity 의 ID 를 삭제하지 않은 이상 둘의 차이는 ID 값의 유무로 파악할 수 있습니다.
+>
+> <br>
 
 <hr>
 
@@ -138,5 +153,10 @@ public void deleteTest(Long id) {
 <br>
 
 # **영속성 컨텍스트 특징**
+
+- #### **1차 캐시**
+- #### **변경감지 (Dirty Checking)**
+- #### **동일성 보장**
+- #### **Lazy / Eager Loading**
 
 # **주의 사항**
