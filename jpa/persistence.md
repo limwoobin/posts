@@ -13,15 +13,6 @@
 >   - [준영속(detached)](#준영속-detached)
 >   - [삭제(removed)](#삭제-removed)
 >
-> - [**영속성 컨텍스트 특징**](#영속성-컨텍스트-특징)
->
->   - [1차 캐시](#1차-캐시)
->   - [변경 감지 (Dirty Checking)](#변경-감지-dirty-checking)
->   - [동일성 보장](#동일성-보장)
->   - [Lazy / Eager Loading](#lazy--eager-loading)
->
-> - [**주의 사항**](#주의-사항)
->
 > <br>
 
 <br /><br /><br />
@@ -34,6 +25,8 @@
 <br /><br />
 
 # **엔티티의 생명주기**
+
+[예제코드는 여기서 확인하실 수 있습니다.](https://github.com/limwoobin/blog-code-example/tree/master/jpa-example/src/main/java/com/example/jpaexample/domain)
 
 Team.java
 
@@ -92,7 +85,7 @@ public class TeamService {
 
 위 예제와 같이 객체가 영속성 컨텍스트에 저장되기 전의 상태가 비영속에 해당됩니다.
 
-<hr>
+<hr><br />
 
 #### **영속 (managed)**
 
@@ -102,8 +95,21 @@ public class TeamService {
   - Eager or Lazy Loading
   - 변경 감지
   - 동일성 보장
+- EntityManager로 엔티티를 조회하거나 저장하면 그 엔티티는 영속상태가 됨
 
-<hr>
+```java
+Team team = new Team(teamDto.getName());    // 비영속
+team = teamRepository.save(team);   // 영속
+```
+
+혹은
+
+```java
+Team team = teamRepository.findById(id)
+      .orElseThrow(RuntimeException::new);  // 영속
+```
+
+<hr><br />
 
 #### **준영속 (detached)**
 
@@ -125,16 +131,18 @@ public Team detachTest(Long id) {
 
 > <br>
 >
-> **비영속과의 차이?**
+> ### **비영속과의 차이?**
 >
 > <hr>
 > 두 상태 모두 영속성 컨텍스트의 관리를 받지 않는다는 점은 동일합니다.  
 > 다만 비영속은 한번도 저장되지 않았던 객체이고, 준영속은 저장이 되어 영속성 컨텍스트의 관리를 받다가 분리된 객체입니다.  
-> 따라서 의도적으로 준영속 entity 의 ID 를 삭제하지 않은 이상 둘의 차이는 ID 값의 유무로 파악할 수 있습니다.
+> 따라서 의도적으로 준영속 entity 의 ID 를 삭제하지 않은 이상 둘의 차이는 Id 값의 유무로 파악해 볼 수 있습니다.
+>
+> <br>
 >
 > <br>
 
-<hr>
+<hr><br />
 
 #### **삭제 (removed)**
 
@@ -146,17 +154,3 @@ public void deleteTest(Long id) {
 		teamRepository.delete(team);
 }
 ```
-
-<hr>
-
-<br>
-<br>
-
-# **영속성 컨텍스트 특징**
-
-- #### **1차 캐시**
-- #### **변경 감지 (Dirty Checking)**
-- #### **동일성 보장**
-- #### **Lazy / Eager Loading**
-
-# **주의 사항**
