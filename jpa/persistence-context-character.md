@@ -79,7 +79,7 @@ public Team cashTest(Long id) {
 
 <br /><br />
 
-#### **변경 감지 (Dirty Checking**
+#### **변경 감지 (Dirty Checking)**
 
 #### **동일성 보장**
 

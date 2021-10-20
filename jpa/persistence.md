@@ -26,8 +26,9 @@
 
 # **엔티티의 생명주기**
 
-[예제코드는 여기서 확인하실 수 있습니다.](https://github.com/limwoobin/blog-code-example/tree/master/jpa-example/src/main/java/com/example/jpaexample/domain)
+![persistence-context](https://user-images.githubusercontent.com/28802545/138093343-03a15707-38d4-416f-af84-39a8e5cbcf79.png)
 
+<br /><br />
 Team.java
 
 ```java
@@ -46,6 +47,8 @@ public class Team {
     private String name;
 }
 ```
+
+[예제코드는 여기서 확인하실 수 있습니다.](https://github.com/limwoobin/blog-code-example/tree/master/jpa-example/src/main/java/com/example/jpaexample/domain)
 
 <br />
 
@@ -95,18 +98,17 @@ public class TeamService {
   - Eager or Lazy Loading
   - 변경 감지
   - 동일성 보장
+  - 쓰기 지연
 - EntityManager로 엔티티를 조회하거나 저장하면 그 엔티티는 영속상태가 됨
 
 ```java
 Team team = new Team(teamDto.getName());    // 비영속
 team = teamRepository.save(team);   // 영속
-```
 
-혹은
+// 혹은
 
-```java
 Team team = teamRepository.findById(id)
-      .orElseThrow(RuntimeException::new);  // 영속
+    .orElseThrow(RuntimeException::new);  // 영속
 ```
 
 <hr><br />
@@ -114,19 +116,24 @@ Team team = teamRepository.findById(id)
 #### **준영속 (detached)**
 
 - 영속성 컨텍스트에 존재하다 분리된 상태
-- 영속성 컨텍스트로 관리하지 않겠다는 의미
+- 엔티티를 영속성 컨텍스트로 관리하지 않겠다는 의미
 
 ```java
 public Team detachTest(Long id) {
-		Team team = teamRepository.findById(id).get();
-		entityManager.detach(team);	// 준영속
+    Team team = teamRepository.findById(id).get();
 
-		return team;
+    entityManager.detach(team); // (1) 특정 엔티티만 분리
+    entityManager.clear();  // (2) 영속성 컨텍스트 초기화(1차 캐시 or 쓰기지연 저장소에 있는 데이터들이 날라감)
+    entityManager.close();  // (3) 영속성 컨텍스트 종료
+
+    return team;
 }
 ```
 
-@Transactional 이 Service Layer 에 선언되어있고, osiv 가 false 인 상태에서 해당 Entity가 Presentation Layer 에 있다면 준영속 상태가 될 수 있습니다.  
-하지만 실무에선 일반적으로 Service Layer , Presentation Layer 각각 다른 Model 을 사용하게 되고 @Transactional 은 Service Layer 에 선언하는 경우가 일반적이어서 준영속 상태를 만날 일이 흔치는 않습니다.
+준영속 상태를 만드는 방법은 위의 3가지를 볼 수 있습니다.
+
+@Transactional 이 ServiceLayer 에 선언되어있고, osiv 가 false 인 상태에서 해당 Entity가 Presentation Layer 에 있다면 준영속 상태가 될 수 있습니다.  
+다만 Entity가 Presentation Layer 에 있는것은 지양하시는게 좋습니다.
 <br /><br />
 
 > <br>
