@@ -48,11 +48,10 @@ public class Team {
 }
 ```
 
-[예제코드는 여기서 확인하실 수 있습니다.](https://github.com/limwoobin/blog-code-example/tree/master/jpa-example/src/main/java/com/example/jpaexample/domain)
-
 <br />
 
-#### **비영속 (new/transient)**
+### **비영속 (new/transient)**
+<hr>
 
 - 영속화 되기 전의 상태
 - 순수한 Entity 객체
@@ -70,10 +69,10 @@ public class TeamService {
 
     @Transactional
     public TeamDto save(TeamDto teamDto) {
-				// 객체가 저장되기 전의 상태
+		// 객체가 저장되기 전의 상태
         Team team = new Team(teamDto.getName());    // 비영속
 
-				// 객체가 저장된 후의 상태
+        // 객체가 저장된 후의 상태
         team = teamRepository.save(team);   // 영속
 
         TeamDto teamResponse = TeamDto.builder()
@@ -88,18 +87,19 @@ public class TeamService {
 
 위 예제와 같이 객체가 영속성 컨텍스트에 저장되기 전의 상태가 비영속에 해당됩니다.
 
-<hr><br />
+<br /><br />
 
-#### **영속 (managed)**
+### **영속 (managed)**
+<hr>
 
 - EntityManager로 부터 관리받는 상태, 즉 영속성 컨텍스트에 저장된 상태
 - 영속성 컨텍스트의 특징을 사용할 수 있음
-  - 1차 캐시
-  - Eager or Lazy Loading
-  - 변경 감지
-  - 동일성 보장
-  - 쓰기 지연
-- EntityManager로 엔티티를 조회하거나 저장하면 그 엔티티는 영속상태가 됨
+  - [1차 캐시](https://devoong.com/posts/2#1차-캐시)
+  - [Eager or Lazy Loading](https://devoong.com/posts/2)
+  - [변경 감지](https://devoong.com/posts/2)
+  - [동일성 보장](https://devoong.com/posts/2)
+  - [쓰기 지연](https://devoong.com/posts/2)
+- EntityManager로 엔티티를 조회(find , jpql , queryDSL)하거나 저장하면 그 엔티티는 영속상태가 됨
 
 ```java
 Team team = new Team(teamDto.getName());    // 비영속
@@ -109,11 +109,16 @@ team = teamRepository.save(team);   // 영속
 
 Team team = teamRepository.findById(id)
     .orElseThrow(RuntimeException::new);  // 영속
+
+Team team = teamRepository.findByName(name)
+    .orElseThrow(RuntimeException::new);  // 영속
 ```
 
-<hr><br />
 
-#### **준영속 (detached)**
+<br /><br />
+
+### **준영속 (detached)**
+<hr>
 
 - 영속성 컨텍스트에 존재하다 분리된 상태
 - 엔티티를 영속성 컨텍스트로 관리하지 않겠다는 의미
@@ -132,7 +137,7 @@ public Team detachTest(Long id) {
 
 준영속 상태를 만드는 방법은 위의 3가지를 볼 수 있습니다.
 
-@Transactional 이 ServiceLayer 에 선언되어있고, osiv 가 false 인 상태에서 해당 Entity가 Presentation Layer 에 있다면 준영속 상태가 될 수 있습니다.  
+혹은 @Transactional 이 ServiceLayer 에 선언되어있고, OSIV가 false 인 상태에서 해당 Entity가 Presentation Layer 에 있다면 준영속 상태가 될 수 있습니다.  
 다만 Entity가 Presentation Layer 에 있는것은 지양하시는게 좋습니다.
 <br /><br />
 
@@ -141,17 +146,18 @@ public Team detachTest(Long id) {
 > ### **비영속과의 차이?**
 >
 > <hr>
-> 두 상태 모두 영속성 컨텍스트의 관리를 받지 않는다는 점은 동일합니다.  
-> 다만 비영속은 한번도 저장되지 않았던 객체이고, 준영속은 저장이 되어 영속성 컨텍스트의 관리를 받다가 분리된 객체입니다.  
+> 두 상태 모두 영속성 컨텍스트의 관리를 받지 않는다는 점은 동일합니다. <br>
+> 다만 비영속은 한번도 저장되지 않았던 객체이기 때문에 id(식별자)가 없으며, <br> 준영속은 저장이 되어 영속성 컨텍스트의 관리를 받다가 분리된 객체이므로 id(식별자)가 존재합니다.<br>
 > 따라서 의도적으로 준영속 entity 의 ID 를 삭제하지 않은 이상 둘의 차이는 Id 값의 유무로 파악해 볼 수 있습니다.
 >
 > <br>
 >
 > <br>
 
-<hr><br />
+<br /><br />
 
-#### **삭제 (removed)**
+### **삭제 (removed)**
+<hr>
 
 - 엔티티가 삭제된 상태
 
