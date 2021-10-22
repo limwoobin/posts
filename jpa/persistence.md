@@ -165,5 +165,10 @@ public Team detachTest(Long id) {
 public void deleteTest(Long id) {
 		Team team = teamRepository.findById(id).get();
 		teamRepository.delete(team);
+
+        // 혹은
+
+        Team team = teamRepository.findById(id).get();
+        entityManager.remove(team);
 }
 ```
