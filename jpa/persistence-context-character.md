@@ -9,7 +9,7 @@
 >   - [1차 캐시](#1차-캐시)
 >   - [변경 감지 (Dirty Checking)](#변경-감지-dirty-checking)
 >   - [동일성 보장](#동일성-보장)
->   - [Lazy / Eager Loading](#lazy--eager-loading)
+>   - [지연 로딩(Lazy Loading](#지연-로딩lazy-loading)
 >   - [쓰기 지연](#쓰기-지연)
 >
 > - [**주의 사항**](#주의-사항)
@@ -239,9 +239,175 @@ public void 동일성_테스트_v2() {
 
 <br /><br />
 
-### **Lazy / Eager Loading**
+### **지연 로딩(Lazy Loading)**
 
 <hr>
+
+- 연관관계에 있는 엔티티를 조회시 한번에 가져오지 않고
+  필요시에 가져오는 것.
+- 연관관계에 있는 객체는 프록시 상태로 초기화되지 않은 상태로 존재함.
+- 필요시에 가져오기 때문에 불필요한 쿼리를 실행하지 않을 수 있음
+
+<br />
+
+> <br>
+>
+> ### **각 연관관계의 기본 로딩 방식**
+>
+> - **OneToMany : Lazy**
+> - **ManyToMany : Lazy**
+> - **ManyToOne : Eager**
+> - **OneToOne : Eager**
+>
+> <br>
+
+<br />
+
+Team.java
+
+```java
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+@Entity
+public class Team {
+
+    public Team(String name) {
+        this.name = name;
+    }
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    @OneToMany(fetch = FetchType.LAZY , cascade = CascadeType.ALL)
+    @JoinColumn(name = "team_id")
+    private List<Member> members = new ArrayList<>();
+
+    public void addMembers(Member member) {
+        this.members.add(member);
+    }
+}
+```
+
+<br />
+
+Member.java
+
+```java
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+@Entity
+public class Member {
+
+	public Member(String name) {
+		this.name = name;
+	}
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+
+	@Column(name = "team_id")
+	private Long teamId;
+
+	private String name;
+}
+```
+
+예제에서 사용할 TeamEntity 입니다.  
+Team(1) : Member(N) - 1:N 단방향으로 설계를 해봤습니다.
+
+지연 로딩으로 객체를 가져오게 되면 객체는 사용되기 전까지는 프록시객체로  
+초기화되지 않은 상태로 있게됩니다.  
+이 점을 이용하여 테스트코드를 작성해보겠습니다.
+
+```java
+@SpringBootTest
+class 지연_로딩_테스트_클래스 {
+
+		@Autowired
+		private TeamRepository teamRepository;
+
+		@Autowired
+		private MemberRepository memberRepository;
+
+		@Autowired
+		private EntityManager entityManager;
+
+		@BeforeEach
+		void init() {
+			Team team = new Team("test");
+			Member member = new Member("member1");
+			Member member2 = new Member( "member2");
+			Member member3 = new Member("member3");
+
+			team.addMembers(member);
+			team.addMembers(member2);
+			team.addMembers(member3);
+			teamRepository.save(team);
+
+			entityManager.flush();
+			entityManager.clear();
+			entityManager.close();
+		}
+
+		@Test
+		@Transactional
+		public void 연관관계_객체가_프록시객체라면_성공() {
+				Team team = teamRepository.findById(1L)
+								.orElseThrow(RuntimeException::new); // (1)
+
+				boolean isLoad = entityManager.getEntityManagerFactory().getPersistenceUnitUtil().isLoaded(team.getMembers()); // (2)
+				assertThat(isLoad).isEqualTo(false); // (3)
+		}
+
+		@Test
+		@Transactional
+		public void 연관관계_객체가_초기화_되었다면_성공() {
+				Team team = teamRepository.findById(1L)
+								.orElseThrow(RuntimeException::new); // (1)
+
+				System.out.println(team.getMembers().size()); // (2)
+
+				boolean isLoad = entityManager.getEntityManagerFactory().getPersistenceUnitUtil().isLoaded(team.getMembers()); // (3)
+				assertThat(isLoad).isEqualTo(true); // (4)
+		}
+}
+```
+
+**entityManager.getEntityManagerFactory().getPersistenceUnitUtil().isLoaded()**
+
+- 해당 객체가 프록시 객체가 초기화되었는지 유무를 나타냄.
+- 프록시 객체가 초기화되어 로드되었다면 true , 초기화되지 않았다면 false.
+
+**첫번째 메소드** 우선 확인해보겠습니다.  
+(1) - TeamEntity 를 조회합니다. 연관관계는 Lazy 입니다.  
+(2) - team.getMembers() 는 List<Member> 객체를 리턴합니다.  
+하지만 해당 객체는 한번도 사용되지 않았으니 초기화되지 않았으니 false 를 리턴할 것으로 예상됩니다.  
+(3) - isLoad 는 예상대로 false 를 반환합니다.
+
+![lazy-loading-1](https://user-images.githubusercontent.com/28802545/138583651-bd87aee0-d69d-4a73-824a-0616c3a68751.PNG)
+
+<br />
+
+**두번째 메소드** 를 한번 확인해보겠습니다.  
+(1) - TeamEntity 를 조회합니다. 연관관계는 Lazy 입니다.  
+(2) - team.getMembers().size() 를 호출했습니다.  
+즉, 프록시객체를 사용한 것입니다. 이렇게 되면 해당 객체는 초기화됩니다.
+(3) - team.getMembers() 객체는 위에서 사용되었으니 true를 리턴할 것으로 예상됩니다.
+(4) - isLoad 는 예상대로 true를 반환합니다.
+
+![lazy-loading-2](https://user-images.githubusercontent.com/28802545/138583652-8c05fded-4934-44e8-8321-4f6fa0c2ffcd.PNG)
+
+- 추가적으로 객체가 초기화되며 select query 발생한것을 이미지에서 학인할 수 있습니다.
+
+<br /><br />
 
 ### **쓰기 지연**
 
