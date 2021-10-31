@@ -2,8 +2,6 @@
 >
 > ## **Overview**
 >
-> <br>
->
 > - [**영속성 컨텍스트 특징**](#영속성-컨텍스트-특징)
 >
 >   - [1차 캐시](#1차-캐시)
@@ -16,11 +14,11 @@
 >
 > <br>
 
-<br /><br />
+<br />
 
 #### [**예제 및 테스트 코드는 github 에서 확인 가능합니다.**](https://github.com/limwoobin/blog-code-example/tree/master/jpa-example)
 
-<br /><br />
+<br />
 
 # **영속성 컨텍스트 특징**
 
@@ -179,14 +177,11 @@ public void getTeam(Long id) {
 
 <br />
 
-> <br>
 > 트랜잭션이 종료되기 전 이라 표현한 이유는 트랜잭션이 끝나는 시점에 flush 가 발생하기 떄문입니다. <br>
 > 만약 트랜잭션 내에서 flush 를 실행하게 되는 JPQL 이 실행되거나 <br>
 > 강제로 entityManager.flush() 를 호출하게 되어도 동일하게 update query 가 발생합니다. <br>
 > 추가로 flush 가 발생했다고 바로 DB에 반영되는것은 아닙니다.
 > flush 는 트랜잭션을 커밋하지 않기 때문에 이후에 커밋이 되어야 DB에 반영됩니다.
-> <br>
-> <br>
 
 <br /><br />
 
