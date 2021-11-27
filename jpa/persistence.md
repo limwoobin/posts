@@ -2,8 +2,6 @@
 >
 > ## **Overview**
 >
-> <br>
->
 > - [**영속성 컨텍스트란 ?**](#영속성-컨텍스트란)
 >
 > - [**엔티티의 생명주기**](#엔티티의-생명주기)
@@ -51,6 +49,7 @@ public class Team {
 <br />
 
 ### **비영속 (new/transient)**
+
 <hr>
 
 - 영속화 되기 전의 상태
@@ -90,6 +89,7 @@ public class TeamService {
 <br /><br />
 
 ### **영속 (managed)**
+
 <hr>
 
 - EntityManager로 부터 관리받는 상태, 즉 영속성 컨텍스트에 저장된 상태
@@ -114,10 +114,10 @@ Team team = teamRepository.findByName(name)
     .orElseThrow(RuntimeException::new);  // 영속
 ```
 
-
 <br /><br />
 
 ### **준영속 (detached)**
+
 <hr>
 
 - 영속성 컨텍스트에 존재하다 분리된 상태
@@ -157,6 +157,7 @@ public Team detachTest(Long id) {
 <br /><br />
 
 ### **삭제 (removed)**
+
 <hr>
 
 - 엔티티가 삭제된 상태
