@@ -256,6 +256,8 @@ public void 동일성_테스트_v2() {
 >
 > ### **각 연관관계의 기본 로딩 방식**
 >
+> <hr>
+>
 > - **OneToMany : Lazy**
 > - **ManyToMany : Lazy**
 > - **ManyToOne : Eager**
