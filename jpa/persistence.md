@@ -95,10 +95,10 @@ public class TeamService {
 - EntityManager로 부터 관리받는 상태, 즉 영속성 컨텍스트에 저장된 상태
 - 영속성 컨텍스트의 특징을 사용할 수 있음
   - [1차 캐시](https://devoong.com/posts/2#1차-캐시)
-  - [Eager or Lazy Loading](https://devoong.com/posts/2)
-  - [변경 감지](https://devoong.com/posts/2)
-  - [동일성 보장](https://devoong.com/posts/2)
-  - [쓰기 지연](https://devoong.com/posts/2)
+  - [Lazy Loading](https://devoong.com/posts/2#지연-로딩lazy-loading)
+  - [변경 감지](https://devoong.com/posts/2#변경-감지-dirty-checking)
+  - [동일성 보장](https://devoong.com/posts/2#동일성-보장)
+  - [쓰기 지연](https://devoong.com/posts/2#쓰기-지연)
 - EntityManager로 엔티티를 조회(find , jpql , queryDSL)하거나 저장하면 그 엔티티는 영속상태가 됨
 
 ```java
