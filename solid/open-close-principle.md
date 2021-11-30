@@ -180,9 +180,195 @@ public enum AirlineType {
 <br>
 <br>
 
-#### **이러한 문제들을 추상화 , factory method 를 이용해 유연하게 리팩토링 해보겠습니다.**
+#### **이러한 문제들을 추상화 , factory method 를 이용해 리팩토링 해보겠습니다.**
 
-controller와 enum 은 동일하게 사용하겠습니다
+기존 if - else 로 직접 api 호출하던 부분을 인터페이스로 추상화시켜보았습니다.
+
+```java
+public interface AirlineReservation {
+    ReservationDTO reserve(ReservationRequest request);
+    ReservationDTO cancel(ReservationRequest request);
+}
+```
+
+<br>
+
+그리고 각 항공사별로 구현클래스를 만들어 Service 로직에서 가지고 있던 책임을 분리했습니다.
+
+```java
+@Component
+public class KoreanAirReservation implements AirlineReservation {
+
+    @Override
+    public ReservationDTO reserve(ReservationRequest request) {
+        // 대한항공 예약 로직...
+				// 추가 인증 로직...
+    }
+
+    @Override
+    public ReservationDTO cancel(ReservationRequest request) {
+        // 대한항공 예약 취소 로직...
+    }
+}
+
+@Component
+public class AsianaReservation implements AirlineReservation {
+
+    @Override
+    public AsianaResponseDTO reserve(ReservationRequest request) {
+        // 아시아나 예약 로직...
+    }
+
+    @Override
+    public AsianaResponseDTO cancel(ReservationRequest request) {
+        // 아시아나 예약 취소 로직...
+    }
+
+		// 아시아나 전용 response 에서 우리 서비스의 DTO 로 변환
+		private ReservationDTO convert(AsianaResponseDTO responseDTO) {
+			// convert...
+		}
+}
+
+@Component
+public class AirSeoulReservation implements AirlineReservation {
+
+    @Override
+    public ReservationDTO reserve(ReservationRequest request) {
+        // 에어서울 예약 로직...
+    }
+
+    @Override
+    public ReservationDTO cancel(ReservationRequest request) {
+        // 에어서울 예약 취소 로직...
+    }
+}
+```
+
+각 항공사 구현체는 AirlineReservation 인터페이스를 상속받았습니다.  
+그리고 구현 클래스에서는 각 항공사별 추가 요구사항을 녹여보았습니다.
+
+1. 대한항공은 추가 인증로직이 필요
+2. 아시아나항공은 api통신에 필요한 전용 format에 맞춰 통신
+
+이러한 추가 요구사항들을 각 항공사별 구현체에서 담당하게끔 처리했습니다.
+
+<br>
+
+AirLineReservationFactory.java
+
+```java
+@Component
+@RequiredArgsConstructor
+public class AirLineReservationFactory {
+    private final KoreanAirReservation koreanAirReservation;
+    private final AsianaReservation asianaReservation;
+    private final AirSeoulReservation airSeoulReservation;
+
+    public AirlineReservation createReservationService(AirlineType airlineType) {
+        switch (airlineType) {
+            case KOREAN_AIR: return koreanAirReservation;
+            case ASIANA_AIR: return asianaReservation;
+            case AIR_SEOUL: return airSeoulReservation;
+        }
+
+        throw new IllegalArgumentException();
+    }
+}
+```
+
+<br>
+
+ReservationService.java
+
+```java
+@Service
+@RequiredArgsConstructor
+public class ReservationService {
+    private final AirLineReservationFactory airLineReservationFactory;
+
+    public ReservationDTO reservation(ReservationRequest request) {
+        AirlineReservation airlineReservation = airLineReservationFactory.createReservationService(request.getAirlineType());
+        return airlineReservation.reserve(request);
+    }
+
+    public ReservationDTO cancelReservation(ReservationRequest request) {
+        AirlineReservation airlineReservation = airLineReservationFactory.createReservationService(request.getAirlineType());
+        return airlineReservation.cancel(request);
+    }
+}
+```
+
+기존에 if ~ else 블록으로 처리하던 코드를 factory 클래스를 이용해 객체 생성을 하게끔 변경했습니다.  
+이제 항공사가 추가되어도 항공사 api 를 호출하는 Service 의 로직은 수정이 필요 없어졌습니다.  
+항공사 관련 로직들은 각 구현체에서 처리하고 그 구현체는 factory class 에서 가져오기 떄문입니다. 추가된다하면 factory class , 구현체만 추가하면 되기 때문이죠.
+
+그렇다면 항공사를 하나 추가해보겠습니다.
+
+```java
+@Component
+public class TwayReservation implements AirlineReservation {
+    @Override
+    public ReservationDTO reserve(ReservationRequest request) {
+        return null;
+    }
+
+    @Override
+    public ReservationDTO cancel(ReservationRequest request) {
+        return null;
+    }
+}
+```
+
+<br>
+
+```java
+@Component
+@RequiredArgsConstructor
+public class AirLineReservationFactory {
+    private final KoreanAirReservation koreanAirReservation;
+    private final AsianaReservation asianaReservation;
+    private final AirSeoulReservation airSeoulReservation;
+    private final TwayReservation twayReservation;
+
+    public AirlineReservation createReservationService(AirlineType airlineType) {
+        switch (airlineType) {
+            case KOREAN_AIR: return koreanAirReservation;
+            case ASIANA_AIR: return asianaReservation;
+            case AIR_SEOUL: return airSeoulReservation;
+            case T_WAY: return twayReservation;
+        }
+
+        throw new IllegalArgumentException();
+    }
+}
+```
+
+티웨이 항공이 추가되며 TwayReservation 가 추가되었고 factory class 도 그에 맞춰 수정되었습니다.
+
+<br>
+
+```java
+@Service
+@RequiredArgsConstructor
+public class ReservationService {
+    private final AirLineReservationFactory airLineReservationFactory;
+
+    public ReservationDTO reservation(ReservationRequest request) {
+        AirlineReservation airlineReservation = airLineReservationFactory.createReservationService(request.getAirlineType());
+        return airlineReservation.reserve(request);
+    }
+
+    public ReservationDTO cancelReservation(ReservationRequest request) {
+        AirlineReservation airlineReservation = airLineReservationFactory.createReservationService(request.getAirlineType());
+        return airlineReservation.cancel(request);
+    }
+}
+```
+
+실제 확장된 코드를 호출하는 ReservationService.java 는 코드가 전혀 수정되지 않았습니다.  
+기존 구조였다면 Service에 수많은 if ~ else 블록들을 수정하고 각 항공사에 맞는 기능들을 구현했을텐데요.  
+추가되는 항공사 , 기능에도 훨씬 유연하게 대응할 수 있을것으로 보입니다.
 
 <br>
 <br>
