@@ -2,20 +2,24 @@
 >
 > ## **Overview**
 >
-> - [**OCP (Open Closed Principle) 정의**](#ocp-open-closed-principle-란)
->   - [content 0](#content-0)
-> - [**요구사항**](#요구사항)
+> - [**OCP (Open Closed Principle) 정의**](#ocp-open-closed-principle-정의)
 >
->   - [content 1](#content-1)
->   - [content 2](#content-2)
+>   - [OCP (개방 폐쇄 원칙)의 의미](#ocp-개방-폐쇄-원칙의-의미)
 >
->     <br>
+> - [**예제 코드**](#예제-코드)
+>
+>   - [OCP 를 준수하지 않은 코드](#ocp-를-준수하지-않은-코드)
+>   - [OCP 를 준수한 코드](#ocp-를-준수한-코드)
+>
+> - [**OCP 를 준수해야 하는 이유**](#ocp-를-준수해야-하는-이유) <br><br>
 
 <br />
-<br />
+
+#### [**예제 및 테스트 코드는 github 에서 확인 가능합니다.**](https://github.com/limwoobin/blog-code-example/tree/master/oop-example/src/main/java/com/example/oopexample/ocp)
+
 <br />
 
-# **OCP(Open Closed Principle) 정의**
+# **OCP (Open Closed Principle) 정의**
 
 - 개방 폐쇄 원칙
 - 소프트웨어 개체는 확장에 열려있어야 하고 수정에는 닫혀있어야 한다는 원칙.
@@ -23,7 +27,7 @@
 <br>
 <br>
 
-### **OCP(개방 폐쇄 원칙)이 무슨 의미일까 ??**
+### **OCP (개방 폐쇄 원칙)의 의미**
 
 <hr>
 
@@ -33,17 +37,22 @@
 
 <br>
 
-**OCP(개방 폐쇄 원칙)** 을 준수하지 않은 예시와 준수한 예시 두가지를 들어 비교해보겠습니다
+# **예제 코드**
+
+**OCP (개방 폐쇄 원칙)** 을 준수하지 않은 예시와 준수한 예시 두가지를 들어 비교해보겠습니다
 
 <br>
 
 스카이스캐너 , 마이리얼트립과 같은 항공편 예약 서비스를 만든다고 가정해보겠습니다.  
 그렇다면 예약을 하기 위해서는 각 항공사과 예약에 관련된 api 통신을 주고 받아야 하고  
-각 항공사들마다 사용하는 데이터 포맷(ex - DTO)도 맞춰야 하고 신경써야할 부분이 굉장히 많을것 같습니다.  
+항공사들마다 요구하는 사항들도 각각 다릅니다.  
 서비스를 운영하다보면 중간에 추가되거나 삭제되는 항공사도 있겠죠??
 
-> OCP 를 준수하지 않은 코드
+<br>
 
+### **OCP 를 준수하지 않은 코드**
+
+<hr>
 <br>
 
 ReservationService.java
@@ -99,7 +108,7 @@ public enum AirlineType {
 
 위의 코드를 보시면 각 항공사에게 예약 api를 호출하는 부분을 reservation method 에서 처리하는것을 볼 수 있습니다.
 
-그리고 새로운 요구사항을 받았습니다.
+그런데 새로운 요구사항을 받았습니다.
 
 1. 진에어 항공사 추가
 2. 예약 취소 기능 추가
@@ -180,9 +189,15 @@ public enum AirlineType {
 <br>
 <br>
 
-#### **이러한 문제들을 추상화 , factory method 를 이용해 리팩토링 해보겠습니다.**
+#### **이러한 문제들을 추상화, 다형성, factory method 를 이용해 리팩토링 해보겠습니다.**
 
-기존 if - else 로 직접 api 호출하던 부분을 인터페이스로 추상화시켜보았습니다.
+<br>
+
+### **OCP 를 준수한 코드**
+
+<hr>
+
+Service 에서 구현에 직접 의존하던 로직을 인터페이스에 의존하도록 인터페이스를 추가합니다.
 
 ```java
 public interface AirlineReservation {
@@ -246,12 +261,12 @@ public class AirSeoulReservation implements AirlineReservation {
 ```
 
 각 항공사 구현체는 AirlineReservation 인터페이스를 상속받았습니다.  
-그리고 구현 클래스에서는 각 항공사별 추가 요구사항을 녹여보았습니다.
+그리고 구현 클래스에서는 각 항공사별 추가 요구사항을 구현했습니다.
 
 1. 대한항공은 추가 인증로직이 필요
 2. 아시아나항공은 api통신에 필요한 전용 format에 맞춰 통신
 
-이러한 추가 요구사항들을 각 항공사별 구현체에서 담당하게끔 처리했습니다.
+이러한 추가 요구사항들을 각 항공사별 클래스에서 담당하게 했습니다.
 
 <br>
 
@@ -299,7 +314,7 @@ public class ReservationService {
 }
 ```
 
-기존에 if ~ else 블록으로 처리하던 코드를 factory 클래스를 이용해 객체 생성을 하게끔 변경했습니다.  
+**기존에 if ~ else 블록으로 처리하던 코드를 factory 클래스를 이용해 객체 생성을 하게끔 변경했습니다.**  
 이제 항공사가 추가되어도 항공사 api 를 호출하는 Service 의 로직은 수정이 필요 없어졌습니다.  
 항공사 관련 로직들은 각 구현체에서 처리하고 그 구현체는 factory class 에서 가져오기 떄문입니다. 추가된다하면 factory class , 구현체만 추가하면 되기 때문이죠.
 
@@ -310,12 +325,12 @@ public class ReservationService {
 public class TwayReservation implements AirlineReservation {
     @Override
     public ReservationDTO reserve(ReservationRequest request) {
-        return null;
+        // 티웨이 예약 로직...
     }
 
     @Override
     public ReservationDTO cancel(ReservationRequest request) {
-        return null;
+        // 티웨이 예약 취소 로직...
     }
 }
 ```
@@ -371,38 +386,19 @@ public class ReservationService {
 추가되는 항공사 , 기능에도 훨씬 유연하게 대응할 수 있을것으로 보입니다.
 
 <br>
-<br>
 
 ### **OCP 를 준수해야 하는 이유**
 
 <hr>
 
-OCP 원칙은 객체지향 프로그래밍의 핵심 원칙이라고 볼 수 있습니다.
-이 원칙을 지키면 객체의 유연성 , 재사용성 , 유지보수성을 얻을 수 있습니다.
+OCP 원칙은 객체지향 프로그래밍의 핵심 원칙이라고 볼 수 있습니다.  
+위 예제를 보셨듯이 OCP원칙을 준수하면 다음과 같은 장점을 얻을 수 있습니다.
+
+- **기능이 추가되거나 기존 로직을 건들지 않으니 확장에 유연하다**
+- **기존 로직에 비해 유지보수하기 좋다**
+- **클래스의 재사용성 증가**
 
 <br>
 <br>
 
-# **요구사항**
-
-OCP 를 팩토리메서드를 이용해서 준수하는 방법을 예시로 작성
-
-<br>
-<br>
-
-### content 2
-
-...
-<br>
-<br>
-
-# **Subject 3**
-
-### content 3 / 4
-
-...
-<br>
-
-```
-
-```
+감사합니다.
