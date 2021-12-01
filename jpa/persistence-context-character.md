@@ -7,7 +7,7 @@
 >   - [1차 캐시](#1차-캐시)
 >   - [변경 감지 (Dirty Checking)](#변경-감지-dirty-checking)
 >   - [동일성 보장](#동일성-보장)
->   - [지연 로딩(Lazy Loading](#지연-로딩lazy-loading)
+>   - [지연 로딩(Lazy Loading)](#지연-로딩lazy-loading)
 >   - [쓰기 지연](#쓰기-지연)
 >
 > - [**마무리**](#마무리)
@@ -16,7 +16,7 @@
 
 <br />
 
-#### [**예제 및 테스트 코드는 github 에서 확인 가능합니다.**](https://github.com/limwoobin/blog-code-example/tree/master/jpa-example)
+#### [**예제 및 테스트 코드는 github 에서 확인 가능합니다.**](https://github.com/limwoobin/blog-code-example/tree/master/jpa-example/src/main/java/com/example/jpaexample/domain)
 
 <br />
 
