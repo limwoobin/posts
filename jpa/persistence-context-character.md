@@ -182,6 +182,7 @@ public void getTeam(Long id) {
 > 강제로 entityManager.flush() 를 호출하게 되어도 동일하게 update query 가 발생합니다. <br>
 > 추가로 flush 가 발생했다고 바로 DB에 반영되는것은 아닙니다.
 > flush 는 트랜잭션을 커밋하지 않기 때문에 이후에 커밋이 되어야 DB에 반영됩니다.
+> <br><br>
 
 <br /><br />
 
