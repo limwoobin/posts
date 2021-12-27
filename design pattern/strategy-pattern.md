@@ -2,21 +2,20 @@
 >
 > ## **Overview**
 >
-> - [**Subject 1**](#subject-1)
->   - [content 0](#content-0)
-> - [**Subject 2**](#subject-2)
+> - [**전략 패턴(Strategy Pattern)이란?**](#subject-1)
+> - [**전략 패턴 예제 코드**](#subject-2)
 >   - [content 1](#content-1)
 >   - [content 2](#content-2)
-> - [**Subject 3**](#subject-3)
->
+> - [**전략 패턴을 사용하는 이유**](#subject-3)
 >   - [content 3 / 4](#content-3--4)
->
->     <br>
+> - [**전략 패턴 예시**](#subject-3)
+>   - [content 3 / 4](#content-3--4)
+<br><br>
 
 <br />
-<br />
-<br />
-<br />
+
+#### [**예제 및 테스트 코드는 github 에서 확인 가능합니다.**](https://github.com/limwoobin/blog-code-example/tree/master/oop-example/src/main/java/com/example/oopexample/ocp)
+
 <br />
 
 # `test code block`
@@ -43,7 +42,7 @@ public class Template {
 <br />
 <br />
 
-# Subject 1
+# 전략 패턴(Strategy Pattern)이란?
 
 ### content 0
 
@@ -52,7 +51,7 @@ public class Template {
 <br>
 <br>
 
-# Subject 2
+# 전략 패턴 예제 코드
 
 ### content 1
 
@@ -66,7 +65,14 @@ public class Template {
 <br>
 <br>
 
-# **Subject 3**
+# **전략 패턴을 사용하는 이유**
+
+### content 3 / 4
+
+...
+<br>
+
+# **전략 패턴 예시**
 
 ### content 3 / 4
 
