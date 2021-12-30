@@ -2,16 +2,16 @@
 >
 > ## **Overview**
 >
-> - [**OCP (Open Closed Principle) 정의**](#ocp-open-closed-principle-정의)
+> - ### [**OCP (Open Closed Principle) 정의**](#ocp-open-closed-principle-정의)
 >
 >   - [OCP (개방 폐쇄 원칙)의 의미](#ocp-개방-폐쇄-원칙의-의미)
 >
-> - [**예제 코드**](#예제-코드)
+> - ### [**예제 코드**](#예제-코드)
 >
 >   - [OCP 를 준수하지 않은 코드](#ocp-를-준수하지-않은-코드)
 >   - [OCP 를 준수한 코드](#ocp-를-준수한-코드)
 >
-> - [**OCP 를 준수해야 하는 이유**](#ocp-를-준수해야-하는-이유) <br><br>
+> - ### [**OCP 를 준수해야 하는 이유**](#ocp-를-준수해야-하는-이유) <br><br>
 
 <br />
 
@@ -391,9 +391,7 @@ public class ReservationService {
 
 <br>
 
-### **OCP 를 준수해야 하는 이유**
-
-<hr>
+# **OCP 를 준수해야 하는 이유**
 
 OCP 원칙은 객체지향 프로그래밍의 핵심 원칙이라고 볼 수 있습니다.  
 위 예제를 보셨듯이 OCP원칙을 준수하면 다음과 같은 장점을 얻을 수 있습니다.
