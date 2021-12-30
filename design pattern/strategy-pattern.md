@@ -38,7 +38,7 @@
 
 <br>
 
-![strategy-pattern-image-1](https://user-images.githubusercontent.com/28802545/147659160-4e03d785-a022-44d3-a7d2-03ed50d2a590.png)
+![strategy-pattern-image-1](https://user-images.githubusercontent.com/28802545/147727923-03894d2d-ba83-478c-8c75-fd95383ac972.png)
 <br>
 
 - Context: Strategy 를 사용하는 객체
