@@ -2,16 +2,16 @@
 >
 > ## **Overview**
 >
-> - [**전략 패턴(Strategy Pattern)이란?**](#subject-1)
-> - [**전략 패턴 예제 코드**](#subject-2)
->   - [content 1](#content-1)
->   - [content 2](#content-2)
-> - [**전략 패턴을 사용하는 이유**](#subject-3)
->   - [content 3 / 4](#content-3--4) <br><br>
+> - ### [**전략 패턴(Strategy Pattern)이란?**](#전략-패턴-strategy-pattern이란)
+> - ### [**전략 패턴 예제 코드**](#전략-패턴-예제-코드)
+>   - [**전략 패턴 적용 전**](#전략-패턴-적용-전)
+>   - [**전략 패턴 적용 후**](#전략-패턴-적용-후)
+>   - [**예제코드 클래스 다이어그램**](#예제코드-클래스-다이어그램)
+> - ### [**전략 패턴을 사용하는 이유**](#전략-패턴을-사용하는-이유) <br><br>
 
 <br />
 
-#### [**예제 및 테스트 코드는 github 에서 확인 가능합니다.**](https://github.com/limwoobin/blog-code-example/tree/master/oop-example/src/main/java/com/example/oopexample/ocp)
+#### [**예제 및 테스트 코드는 github 에서 확인 가능합니다.**](https://github.com/limwoobin/blog-code-example/tree/master/design-pattern-example/src/strategy)
 
 <br />
 <br />
@@ -64,6 +64,8 @@
 <br>
 
 고객의 등급에 따라 포인트를 적립하는 행위를 코드로 작성해보겠습니다
+
+### **전략 패턴 적용 전**
 
 Consumer.java
 
@@ -161,21 +163,24 @@ Process finished with exit code 0
 언뜻보면 위 코드도 이미 전략 패턴을 이용한 코드로 느껴지실 수 있습니다.  
 반은 맞고 반은 틀리다 생각합니다.  
 PaymentService 에서는 Consumer 를 주입받아 각 행위마다 GoldConsumer , VipConsumer 라는 알고리즘을 변경하며 사용하기 때문이죠.  
-VipConsumer , GoldConsumer 각자의 책임에 대한 적립정책을 가지고 있습니다.  
+VipConsumer , GoldConsumer 각자의 책임에 대한 적립금 정책을 가지고 있습니다.  
 <br>
-하지만 이 코드에도 역시 문제점이 존재합니다.  
-앞서 전략 패턴은 변경되는 행위에 대해 캡슐화를 해야 한다고 했습니다.
+**하지만 이 코드에도 역시 문제점이 존재합니다.**  
+앞서 전략 패턴은 변경되는 행위에 대해 캡슐화를 해야 한다고 했습니다.  
+하지만 적립금 정책이 변경되거나 추가된다면 어떨까요?
 
-만약 VipConsumer 는 적립비율외에 구매금액이 30000원 이상이라면 추가 적립금 2000원이 주어진다고 가정해보겠습니다.
+VipConsumer가 국민카드로 결제했을시 추가 적립금 2000원이 주어진다는 요구사항이 들어왔다 가정해보겠습니다.
+
+### **전략 패턴 적용 후**
 
 ```java
 public class VipConsumer implements Consumer {
    private static final double POINT_RATE = 0.1;
 
     @Override
-    public int payment(int price) {
+    public int payment(int price , String card) {
 			int point = 0;
-			if (price > 30000) {
+			if ("KB".equals(card)) {
 				point += 2000;
 			}
 
@@ -188,7 +193,7 @@ public class VipConsumer implements Consumer {
 새로운 기능으로 변경하기 위해 기존 코드가 수정된 모습입니다.  
 이는 흔히 말하는 [**ocp(open-closed-principle)**](https://www.devoong.com/posts/3)이 위배된 모습입니다.
 
-- 다른 등급이지만 같은 정책일 경우 코드가 중복될 수 있음
+- 다른 등급이지만 같은 정책을 사용하는 경우 코드가 중복될 수 있음
 - 중복이라는것은 즉 코드변경시 변경이 여러군데에서 일어날 수 있음
   <br>
 
@@ -201,27 +206,21 @@ Vip고객의 포인트 적립 정책에 대해 전략패턴을 적용해보겠�
 
 <br>
 
-VipPointStrategy.java
+PointStrategy.java
 
 ```java
-public interface VipPointStrategy {
-    double POINT_RATE = 0.1;
-
+public interface PointStrategy {
     int earn(int price);
 }
 ```
 
+VipKBCardStrategy.java
+
 ```java
-public class VipOverPriceStrategy implements VipPointStrategy {
+public class VipKBCardStrategy implements PointStrategy {
     @Override
     public int earn(int price) {
-        int point = 0;
-        if (price >= 30000) {
-            point += 2000;
-        }
-
-        point += price * POINT_RATE;
-        return point;
+        return 2000;
     }
 }
 ```
@@ -232,15 +231,19 @@ VipConsumer.java
 
 ```java
 public class VipConsumer implements Consumer {
-    private VipPointStrategy vipPointStrategy;
+    private static final double POINT_RATE = 0.1;
+    private PointStrategy pointStrategy;
 
-    public VipConsumer(VipPointStrategy vipPointStrategy) {
-        this.vipPointStrategy = vipPointStrategy;
+    public VipConsumer(PointStrategy pointStrategy) {
+        this.pointStrategy = pointStrategy;
     }
 
     @Override
     public int payment(int price) {
-        return vipPointStrategy.earn(price);
+        int point = 0;
+        point += pointStrategy.earn(price);
+        point += price * POINT_RATE;
+        return pointStrategy.earn(price);
     }
 }
 ```
@@ -256,7 +259,7 @@ public class PayController {
         int goldPoint = paymentService.payForAmount(30000);
         System.out.println("goldPoint: " + goldPoint);
 
-        Consumer vipConsumer = new VipConsumer(new VipOverPriceStrategy());
+        Consumer vipConsumer = new VipConsumer(new VipKBCardStrategy());
         paymentService = new PaymentService(vipConsumer);
         int vipPoint = paymentService.payForAmount(30000);
         System.out.println("vipPoint: " + vipPoint);
@@ -272,15 +275,54 @@ Process finished with exit code 0
 ```
 
 VipConsumer 는 이제 VipPointStrategy 를 주입받아 적립금을 계산합니다.  
-만약 Vip고객의 포인트정책이 추가된다면 새로운 전략을 추가하면 되고  
-GoldConsumer 에게 새로운 포인트 정책이 추가되거나 변경된다면 새로운 전략을 추가하여 주입해주면 됩니다.
+그렇다면 카카오페이로 결제시 추가 적립금 1000원을 지급한다는 가정을 해보겠습니다.
 
+KakaoPayStrategy.java
+
+```java
+public class KakaoPayStrategy implements PointStrategy {
+    @Override
+    public int earn(int price) {
+        return 1000;
+    }
+}
+```
+
+PayController.java
+
+```java
+public class PayController {
+    public static void main(String[] args) {
+        Consumer goldConsumer = new GoldConsumer(new KakaoPayStrategy());
+
+        PaymentService paymentService = new PaymentService(goldConsumer);
+        int goldPoint = paymentService.payForAmount(30000);
+        System.out.println("goldPoint: " + goldPoint);
+    }
+}
+```
+
+GoldConsuemr 에게 카카오페이 전략을 적용하였습니다.  
+카카오페이에 대한 요구사항 역시 전략을 추가하여 객체의 행위를 유연하게 변경한것을 확인할 수 있습니다.  
+그렇다면 30000 에 Gold등급인 5%의 적립금 + 카카오페이 결제시 1000원의 금액이 적립되어야 합니다.
+
+```
+goldPoint: 2500
+
+Process finished with exit code 0
+```
+
+<br>
+
+### **예제코드 클래스 다이어그램**
+
+![strategy-pattern-image-2](https://user-images.githubusercontent.com/28802545/147868648-549b4da0-0e2d-4c0a-9cc1-88f1723ff42a.PNG)
 <br>
 
 # **전략 패턴을 사용하는 이유**
 
-- 추가되는 요구사항(strategy)에 대처가 유연하다(OCP 원칙을 준수할 수 있음)
-- Strategy 의 구현체가 Context와 분리되기 때문에 알고리즘에만 집중할 수 있음
-- 객체의 전략이 분리되어있기 때문에 전략이 필요한 곳에 재사용 가능
+- **추가되는 요구사항(strategy)에 대처가 유연하다(OCP 원칙을 준수할 수 있음)**
+- **Strategy 의 구현체가 Context와 분리되기 때문에 알고리즘에만 집중할 수 있음**
+- **객체의 전략이 분리되어있기 때문에 전략이 필요한 곳에 재사용 가능**
 
 <br>
