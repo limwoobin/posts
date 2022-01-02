@@ -270,7 +270,7 @@ public class PayController {
 
 ```
 goldPoint: 1500
-vipPoint: 3000
+vipPoint: 5000
 
 Process finished with exit code 0
 ```
