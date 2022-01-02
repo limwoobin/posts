@@ -2,7 +2,7 @@
 >
 > ## **Overview**
 >
-> - ### [**전략 패턴(Strategy Pattern)이란?**](#전략-패턴-strategy-pattern이란)
+> - ### [**전략 패턴(Strategy Pattern)이란?**](#전략-패턴-strategy-pattern이란) <br>
 >
 > - ### [**전략 패턴 예제 코드**](#전략-패턴-예제-코드) <br>
 >
