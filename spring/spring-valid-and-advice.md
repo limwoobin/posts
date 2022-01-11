@@ -41,9 +41,55 @@ implementation('org.springframework.boot:spring-boot-starter-validation')
 
 valid 를 사용하기 위해 위 의존성을 추가합니다.  
 spring boot 2.3 이상부터는 spring-boot-starter-web 의존성 내부에 있던 validation 이 사라져서  
-2.3 이상이시라면 위처럼 선언해서 사용해야 합니다.
+2.3 이상이라면 위처럼 선언해서 사용해야 합니다.
 
 <br>
+
+모든 어노테이션을 여기서 다루진 않겠습니다.  
+우선 간략한 사용방법만 다루겠습니다.
+
+UserRequest.java
+
+```java
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
+public class UserRequest {
+    @Email(message = "이메일 형식이 맞지 않습니다.")
+    @NotBlank(message = "이메일을 입력해주세요.")
+    private String email;
+
+    @NotBlank(message = "이름을 입력해주세요.")
+    @Size(min = 2 , max = 5 , message = "이름은 2자 이상 , 5자 이하여야 합니다.")
+    private String name;
+
+    @NotBlank(message = "나이를 입력해주세요.")
+    @Size(min = 20 , max = 100 , message = "나이는 20~100세 사이의 사용자만 가입이 가능합니다.")
+    private int age;
+}
+```
+
+- @Email: Email 형식인지 확인
+- @NotBlank: null , 공백을 허용하지 않음
+- @Size: 길이를 제한할때 사용(min: 최소 , max: 최대)
+
+UserController.java
+
+```java
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/user")
+public class UserController {
+    private final UserService userService;
+
+    @PostMapping(value = "")
+    public ResponseEntity<UserDTO> create(@Valid UserRequest userRequest) {
+				// logic...
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+```
+
 <br>
 
 # Subject 2
