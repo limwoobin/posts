@@ -69,11 +69,11 @@ public class UserRequest {
 }
 ```
 
-- @Email: Email 형식인지 확인
-- @NotBlank: null , 공백을 허용하지 않음
-- @Size: 길이를 제한할때 사용(min: 최소 , max: 최대)
-- @max: 지정한 값 이하인지
-- @min: 지정한 값 이상인지
+- **@Email:** Email 형식인지 확인
+- **@NotBlank:** null , 공백을 허용하지 않음
+- **@Size:** 길이를 제한할때 사용(min: 최소 , max: 최대)
+- **@max:** 지정한 값 이하인지
+- **@min:** 지정한 값 이상인지
 
 <br>
 
@@ -88,13 +88,13 @@ public class UserController {
 
     @PostMapping(value = "")
     public ResponseEntity<UserDTO> create(@Valid UserRequest userRequest) {
-				
+
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 ```
 
 @Valid 만 체크하기 위해 별다른 로직 없이 바로 201 code 를 리턴하도록 만들었습니다.  
-그렇다면 @Valid를 확인해보기 위해 테스트 코드를 작성해보겠습니다.  
+그렇다면 @Valid를 확인해보기 위해 테스트 코드를 작성해보겠습니다.
 
 <br>
 
@@ -125,9 +125,9 @@ void validTest() throws Exception {
 ![valid-test-code-1](https://user-images.githubusercontent.com/28802545/149118524-4fc6afbd-1080-4cc4-8a8e-4f95d3bdbe82.png)
 ![valid-test-code-2](https://user-images.githubusercontent.com/28802545/149118540-9898e83a-f6f2-44f8-8ce0-e3d344e71002.png)
 
-예상대로 실패하였습니다.  
+예상대로 실패하였습니다.
 
-그렇다면 이번엔 모든 파라미터가 정상적인 상황에서의 테스트를 진행해보겠습니다.  
+그렇다면 이번엔 모든 파라미터가 정상적인 상황에서의 테스트를 진행해보겠습니다.
 
 ```java
 @Test
@@ -150,7 +150,7 @@ void validTest2() throws Exception {
 ```
 
 위의 파라미터를 확인해보면 email , name , age 모두 validation 형식에 맞는 값임을 확인할 수 있습니다.  
-그렇다면 이 테스트코드는 성공해야 정상입니다.  
+그렇다면 이 테스트코드는 성공해야 정상입니다.
 
 ![valid-test-code-2](https://user-images.githubusercontent.com/28802545/149120391-2727c0b2-0907-4300-8f97-bbff00494991.png)
 
@@ -158,9 +158,27 @@ void validTest2() throws Exception {
 
 <br>
 
-### **Controller 에서 처리하기**
+### **Controller에서 에러 메시지 처리하기**
 
+위의 예시에서 @Valid 옵션에 따라 파라미터를 검증하는것을 확인했습니다.  
+하지만 코드에 기재해놓은 message에 대해서는 전혀 찾아볼 수 없습니다.  
+@Valid 에 대한 예외를 확인하려면 BindResult 라는 객체가 필요합니다.
 
+```java
+@GetMapping(value = "/v2")
+    public ResponseEntity create(@Valid UserRequest userRequest , BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            List<FieldError> list = bindingResult.getFieldErrors();
+            for(FieldError error : list) {
+                return new ResponseEntity<>(error.getDefaultMessage() , HttpStatus.BAD_REQUEST);
+            }
+        }
+
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+```
+
+validation 에 맞지 않는 값이 있으면 즉시 return 하도록 작성했습니다.
 
 <br>
 
