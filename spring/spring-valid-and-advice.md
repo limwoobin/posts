@@ -5,12 +5,14 @@
 > - ### [**@Valid 사용하기**](#valid-사용하기)
 >
 >   - [**사용 예제**](#사용-예제)
->   - [**Controller 에서 처리하기**](#content-1)
 >
-> - ### [**advice 를 이용한 Exception Handling 적용**](#subject-2)
->   - [**advice 를 이용한 handling 방법**](#content-2)
-> - [**Subject 3**](#subject-3)
->   - [**content 3 / 4**](#content-3--4) <br><br>
+> - ### [**Controller에서 에러 메시지 처리하기**](#controller에서-에러-메시지-처리하기)
+>
+>   - [**GetMapping**](#getmapping)
+>   - [**PostMapping**](#postmapping)
+>
+> - ### [**advice 를 이용한 Exception Handling 적용**](#advice-를-이용한-exception-handling-적용)
+>   - [**advice 를 이용한 handling 방법**](#advice-를-이용한-handling-방법) <br><br>
 
 <br />
 
@@ -24,7 +26,11 @@
 Spring 에서는 유효성 체크를 위하여 @Valid annotation 을 지원합니다.  
 Valid는 [**JSR-303(Bean Validation)**](https://beanvalidation.org/1.0/spec/) 표준 스펙으로서 제약조건이 있는 객체에게 Bean Validation 을 이용해 조건을 검증하는 어노테이션입니다.
 
+<br>
+
 ### **사용 예제**
+
+<hr>
 
 환경
 
@@ -158,11 +164,17 @@ void validTest2() throws Exception {
 
 <br>
 
-### **Controller에서 에러 메시지 처리하기**
+# **Controller에서 에러 메시지 처리하기**
 
 위의 예시에서 @Valid 옵션에 따라 파라미터를 검증하는것을 확인했습니다.  
 하지만 코드에 기재해놓은 message에 대해서는 전혀 찾아볼 수 없습니다.  
 @Valid 에 대한 예외를 확인하려면 BindResult 라는 객체가 필요합니다.
+
+<br>
+
+### **GetMapping**
+
+<hr>
 
 ```java
 @GetMapping(value = "/v2")
@@ -175,10 +187,12 @@ public ResponseEntity create(@Valid UserRequest userRequest , BindingResult bind
     }
 
     return new ResponseEntity<>(HttpStatus.CREATED);
+
 }
+
 ```
 
-validation 에 맞지 않는 값이 있으면 즉시 return 하도록 작성했습니다.  
+validation 에 맞지 않는 값이 있으면 즉시 return 하도록 작성했습니다.
 테스트 코드를 통해 확인해보겠습니다.
 
 ```java
@@ -215,6 +229,10 @@ status 400 에 "**이메일 형식이 맞지 않습니다.**" 라는 문자열�
 정상적으로 테스트가 통과된것을 확인할 수 있습니다.
 
 <br>
+
+### **PostMapping**
+
+<hr>
 
 이번엔 Post 방식으로도 한번 테스트해보겠습니다.
 
@@ -260,23 +278,101 @@ Post 방식도 동일합니다.
 
 <br>
 
-# Subject 2
+# **advice 를 이용한 Exception Handling 적용**
 
-### content 1
+위에서의 BindResult 를 선언해서 에러를 처리하다보니 몇가지 문제점이 보였습니다.
 
-...
-<br>
-<br>
+- valid 를 사용하는 controller 마다 직접 에러처리 로직을 작성해야 한다.
+- 코드의 중복이 발생한다.
+- 일관성 있는 예외처리를 보장할 수 없다.
 
-### content 2
+이와 같은 문제점들을 해결하기 위해 Spring의 ControllerAdvice 를 이용하여 공통 예외처리를 만들어보겠습니다.
 
-...
-<br>
 <br>
 
-# **Subject 3**
+## **advice 를 이용한 handling 방법**
 
-### content 3 / 4
+<hr>
 
-...
+@Valid 에서 발생한 예외를 캐치해서 응답하는 로직을 만들어보겠습니다.
+
+우선 Advice class 를 만들어보겠습니다.
+
+ExceptionAdvice.class
+
+```java
+@RestControllerAdvice
+public class ExceptionAdvice extends ResponseEntityExceptionHandler {
+     @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
+        BindingResult result = ex.getBindingResult();
+        StringBuilder errMessage = new StringBuilder();
+
+        for (FieldError error : result.getFieldErrors()) {
+            errMessage.append("[")
+                    .append(error.getField())
+                    .append("] ")
+                    .append(":")
+                    .append(error.getDefaultMessage());
+        }
+
+        return new ResponseEntity<>(errMessage , HttpStatus.BAD_REQUEST);
+    }
+}
+```
+
+@Valid 에 대한 예외는 MethodArgumentNotValidException 를 발생시킵니다.  
+그래서 ResponseEntityExceptionHandler 의 handleMethodArgumentNotValid method 를 오버라이딩하여 재정의해서 예외를 캐치한 다음 응답하는 로직을 작성했습니다.
+
+```java
+@PostMapping(value = "")
+public ResponseEntity createForPost(@Valid @RequestBody UserRequest userRequest) {
+
+    return new ResponseEntity(HttpStatus.CREATED);
+}
+```
+
+테스트할 Controller 는 다음과 같습니다.  
+예외를 advice에서 처리할테니 더 이상 controller는 BindingResult 객체가 필요없겟죠?
+
+PostMapping 에 대한 테스트 코드를 먼저 작성해보겠습니다.
+
+```java
+@Nested
+@DisplayName("Valid Advice 테스트")
+class ValidAdviceTest {
+
+    @Test
+    @DisplayName("Valid 예외가 Advice 에서 정상적으로 처리되어야 한다")
+    void advice_post_test() throws Exception {
+        // given
+        UserRequest userRequest = UserRequest.builder()
+                .email("drogba02")
+                .name("woobeen")
+                .age(18)
+                .build();
+
+        String jsonData = objectMapper.writeValueAsString(userRequest);
+
+        // then
+        mockMvc.perform(post("/user")
+                .content(jsonData)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andDo(print());
+
+    }
+}
+```
+
+일부러 email , age가 Valid에 걸리게끔 테스트 코드를 작성했습니다.  
+예상대로라면 응답받은 메시지는 email , age 에 대한 메시지가 나와야 정상입니다. 실행해볼까요?
+
+![valid-test-code-6](https://user-images.githubusercontent.com/28802545/150332959-4317097d-55b8-4d7d-a3f9-22957fc42134.png)
+
+정상적으로 ControllerAdvice 가 동작하는것을 확인할 수 있습니다.
+
+그렇다면 이제 GetMapping에 대한 테스트도 진행해보겠습니다.
+
 <br>
