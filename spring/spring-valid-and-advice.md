@@ -152,7 +152,7 @@ void validTest2() throws Exception {
 위의 파라미터를 확인해보면 email , name , age 모두 validation 형식에 맞는 값임을 확인할 수 있습니다.  
 그렇다면 이 테스트코드는 성공해야 정상입니다.
 
-![valid-test-code-2](https://user-images.githubusercontent.com/28802545/149120391-2727c0b2-0907-4300-8f97-bbff00494991.png)
+![valid-test-code-3](https://user-images.githubusercontent.com/28802545/149120391-2727c0b2-0907-4300-8f97-bbff00494991.png)
 
 정상적으로 테스트가 성공한것을 확인할 수 있습니다.
 
@@ -166,19 +166,97 @@ void validTest2() throws Exception {
 
 ```java
 @GetMapping(value = "/v2")
-    public ResponseEntity create(@Valid UserRequest userRequest , BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            List<FieldError> list = bindingResult.getFieldErrors();
-            for(FieldError error : list) {
-                return new ResponseEntity<>(error.getDefaultMessage() , HttpStatus.BAD_REQUEST);
-            }
+public ResponseEntity create(@Valid UserRequest userRequest , BindingResult bindingResult) {
+    if (bindingResult.hasErrors()) {
+        List<FieldError> list = bindingResult.getFieldErrors();
+        for(FieldError error : list) {
+            return new ResponseEntity<>(error.getDefaultMessage() , HttpStatus.BAD_REQUEST);
         }
-
-        return new ResponseEntity<>(HttpStatus.CREATED);
     }
+
+    return new ResponseEntity<>(HttpStatus.CREATED);
+}
 ```
 
-validation 에 맞지 않는 값이 있으면 즉시 return 하도록 작성했습니다.
+validation 에 맞지 않는 값이 있으면 즉시 return 하도록 작성했습니다.  
+테스트 코드를 통해 확인해보겠습니다.
+
+```java
+@DisplayName("BindResult Valid 테스트")
+class BindResultValidTest {
+
+    static final String EXPECTED_EMAIL_ERR_MESSAGE = "이메일 형식이 맞지 않습니다.";
+
+    @Test
+    @DisplayName("Valid 조건에 맞지 않는 파라미터를 Get으로 넘기면 status 400, 에러메시지를 응답받아야 한다")
+    void validTest_get() throws Exception {
+        // given
+        UserRequest userRequest = UserRequest.builder()
+                .email("drogba02")
+                .name("woobeen")
+                .age(29)
+                .build();
+
+
+        // then
+        mockMvc.perform(get("/user/v2")
+                .param("email" , userRequest.getEmail())
+                .param("name" , userRequest.getName())
+                .param("age" , Integer.toString(userRequest.getAge())))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(EXPECTED_EMAIL_ERR_MESSAGE));
+    }
+}
+```
+
+![valid-test-code-4](https://user-images.githubusercontent.com/28802545/150322229-31e89f0f-a977-4fc3-9865-a3870bc7d7d3.png)
+
+status 400 에 "**이메일 형식이 맞지 않습니다.**" 라는 문자열을 리턴해야 합니다.  
+정상적으로 테스트가 통과된것을 확인할 수 있습니다.
+
+<br>
+
+이번엔 Post 방식으로도 한번 테스트해보겠습니다.
+
+```java
+@PostMapping(value = "/v2")
+public ResponseEntity createForPost(@Valid @RequestBody UserRequest userRequest , BindingResult bindingResult) {
+    if (bindingResult.hasErrors()) {
+        List<FieldError> list = bindingResult.getFieldErrors();
+        for(FieldError error : list) {
+            return new ResponseEntity<>(error.getDefaultMessage() , HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    return new ResponseEntity<>(HttpStatus.CREATED);
+}
+
+
+@Test
+@DisplayName("Valid 조건에 맞는 파라미터를 Post로 넘기면 성공해야 한다")
+void validTest_post_ok() throws Exception {
+    // given
+    UserRequest userRequest = UserRequest.builder()
+            .email("drogba02@naver.com")
+            .name("woobeen")
+            .age(29)
+            .build();
+
+    String jsonData = objectMapper.writeValueAsString(userRequest);
+
+    // then
+    mockMvc.perform(post("/user/v2")
+            .content(jsonData)
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isCreated())
+            .andExpect(content().string(""));
+}
+```
+
+![valid-test-code-5](https://user-images.githubusercontent.com/28802545/150325183-4d09d408-07c4-43fd-bf25-c675f625f0f6.png)
+
+Post 방식도 동일합니다.
 
 <br>
 
