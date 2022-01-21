@@ -11,7 +11,7 @@
 >   - [**GetMapping**](#getmapping)
 >   - [**PostMapping**](#postmapping)
 >
-> - ### [**advice 를 이용한 Exception Handling 적용**](#advice-를-이용한-exception-handling-적용)
+> - ### [**advice 를 이용한 exception handling 적용**](#advice-를-이용한-exception-handling-적용)
 >   - [**advice 를 이용한 handling 방법**](#advice-를-이용한-handling-방법) <br><br>
 
 <br />
