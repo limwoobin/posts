@@ -416,10 +416,10 @@ class ValidAdviceTest {
 하지만 실패했습니다. 에러 메시지를 보니 status()는 예상대로 받은것 같지만 에러메시지를 가져오지 못했네요.  
 왜 Post 시에는 가져오고 Get 으로는 못가져왔을까요?
 
-저희가 advice에서 선언한 **MethodArgumentNotValidException** 는 @RequestBody에 대한 exception 을 처리해주기 때문인데요.
+**<u>저희가 advice에서 선언한 **MethodArgumentNotValidException** 는 @RequestBody에 대한 exception 을 처리해주기 때문인데요.</u>**
 
-위 GetMapping 테스트코드는 ModelAttribute 방식으로 객체에 바인딩되게 됩니다.  
-ModelAttribute 방식으로 받은 파라미터에 대한 예외를 처리해주기 위해서는 **BindException** 을 advice에 선언해줘야 합니다.
+**<u>위 GetMapping 테스트코드는 ModelAttribute 방식으로 객체에 바인딩되게 됩니다.</u>**  
+**<u>ModelAttribute 방식으로 받은 파라미터에 대한 예외를 처리해주기 위해서는 **BindException** 을 advice에 선언해줘야 합니다.</u>**
 
 advice 에 BindException 에 대한 처리를 추가하겠습니다.
 
