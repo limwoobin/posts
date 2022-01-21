@@ -168,7 +168,7 @@ void validTest2() throws Exception {
 
 위의 예시에서 @Valid 옵션에 따라 파라미터를 검증하는것을 확인했습니다.  
 하지만 코드에 기재해놓은 message에 대해서는 전혀 찾아볼 수 없습니다.  
-@Valid 에 대한 예외를 확인하려면 BindResult 라는 객체가 필요합니다.
+@Valid 에 대한 예외를 확인하려면 BindingResult 라는 객체가 필요합니다.
 
 <br>
 
