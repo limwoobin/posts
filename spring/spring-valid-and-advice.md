@@ -6,12 +6,12 @@
 >
 >   - [**사용 예제**](#사용-예제)
 >
-> - ### [**Controller 에서 에러 메시지 처리하기**](#controller-에서-에러-메시지-처리하기)
+> - ### [**Controller 에서 에러 메시지 처리하기**](#controller-에서-에러-메시지-처리하기-1)
 >
 >   - [**GetMapping**](#getmapping)
 >   - [**PostMapping**](#postmapping)
 >
-> - ### [**advice 를 이용한 exception handling 적용**](#advice-를-이용한-exception-handling-적용)
+> - ### [**advice 를 이용한 exception handling 적용**](#advice-를-이용한-exception-handling-적용-1)
 >   - [**advice 를 이용한 handling 방법**](#advice-를-이용한-handling-방법) <br><br>
 
 <br />
