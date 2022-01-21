@@ -6,7 +6,7 @@
 >
 >   - [**사용 예제**](#사용-예제)
 >
-> - ### [**Controller에서 에러 메시지 처리하기**](#controller에서-에러-메시지-처리하기)
+> - ### [**Controller 에서 에러 메시지 처리하기**](#controller-에서-에러-메시지-처리하기)
 >
 >   - [**GetMapping**](#getmapping)
 >   - [**PostMapping**](#postmapping)
@@ -164,7 +164,7 @@ void validTest2() throws Exception {
 
 <br>
 
-# **Controller에서 에러 메시지 처리하기**
+# **Controller 에서 에러 메시지 처리하기**
 
 위의 예시에서 @Valid 옵션에 따라 파라미터를 검증하는것을 확인했습니다.  
 하지만 코드에 기재해놓은 message에 대해서는 전혀 찾아볼 수 없습니다.  
