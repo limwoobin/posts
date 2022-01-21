@@ -2,7 +2,7 @@
 >
 > ## **Overview**
 >
-> - ### [**@Valid 사용하기**](#valid-사용하기)
+> - ### [**Valid 사용하기**](#valid-사용하기)
 >
 >   - [**사용 예제**](#사용-예제)
 >
@@ -21,7 +21,7 @@
 <br />
 <br />
 
-# **@Valid 사용하기**
+# **Valid 사용하기**
 
 Spring 에서는 유효성 체크를 위하여 @Valid annotation 을 지원합니다.  
 Valid는 [**JSR-303(Bean Validation)**](https://beanvalidation.org/1.0/spec/) 표준 스펙으로서 제약조건이 있는 객체에게 Bean Validation 을 이용해 조건을 검증하는 어노테이션입니다.
