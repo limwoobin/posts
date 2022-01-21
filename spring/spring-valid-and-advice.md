@@ -66,7 +66,7 @@ public class UserRequest {
     private String email;
 
     @NotBlank(message = "이름을 입력해주세요.")
-    @Size(min = 2 , max = 10 , message = "이름은 2자 이상 , 5자 이하여야 합니다.")
+    @Range(min = 2 , max = 10 , message = "이름은 2자 이상 , 5자 이하여야 합니다.")
     private String name;
 
     @NotBlank(message = "나이를 입력해주세요.")
@@ -187,7 +187,6 @@ public ResponseEntity create(@Valid UserRequest userRequest , BindingResult bind
     }
 
     return new ResponseEntity<>(HttpStatus.CREATED);
-
 }
 
 ```
@@ -210,7 +209,6 @@ class BindResultValidTest {
                 .name("woobeen")
                 .age(29)
                 .build();
-
 
         // then
         mockMvc.perform(get("/user/v2")
@@ -342,8 +340,11 @@ PostMapping 에 대한 테스트 코드를 먼저 작성해보겠습니다.
 @DisplayName("Valid Advice 테스트")
 class ValidAdviceTest {
 
+    static final String EMAIL_EXCEPTION_MESSAGE = "이메일 형식이 맞지 않습니다.";
+        static final String AGE_EXCEPTION_MESSAGE = "나이는 20~100세 사이의 사용자만 가입이 가능합니다.";
+
     @Test
-    @DisplayName("Valid 예외가 Advice 에서 정상적으로 처리되어야 한다")
+    @DisplayName("PostMapping시 Valid 예외가 Advice 에서 정상적으로 처리되어야 한다")
     void advice_post_test() throws Exception {
         // given
         UserRequest userRequest = UserRequest.builder()
@@ -360,19 +361,91 @@ class ValidAdviceTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString(EMAIL_EXCEPTION_MESSAGE)))
+                .andExpect(content().string(containsString(AGE_EXCEPTION_MESSAGE)))
                 .andDo(print());
-
     }
 }
 ```
 
 일부러 email , age가 Valid에 걸리게끔 테스트 코드를 작성했습니다.  
-예상대로라면 응답받은 메시지는 email , age 에 대한 메시지가 나와야 정상입니다. 실행해볼까요?
+예상대로라면 응답받은 메시지는 email , age 에 대한 메시지가 포함되어있어야 정상입니다. 실행해볼까요?
 
-![valid-test-code-6](https://user-images.githubusercontent.com/28802545/150332959-4317097d-55b8-4d7d-a3f9-22957fc42134.png)
+![valid-test-code-6](https://user-images.githubusercontent.com/28802545/150508036-6c6abea4-3a02-41f6-b626-17366e8b4966.png)
 
-정상적으로 ControllerAdvice 가 동작하는것을 확인할 수 있습니다.
+정상적으로 **ControllerAdvice** 가 동작하는것을 확인할 수 있습니다.
 
-그렇다면 이제 GetMapping에 대한 테스트도 진행해보겠습니다.
+그렇다면 이제 **GetMapping**에 대한 테스트도 진행해보겠습니다.
 
+```java
+@Nested
+@DisplayName("Valid Advice 테스트")
+class ValidAdviceTest {
+
+    static final String EMAIL_EXCEPTION_MESSAGE = "이메일 형식이 맞지 않습니다.";
+        static final String AGE_EXCEPTION_MESSAGE = "나이는 20~100세 사이의 사용자만 가입이 가능합니다.";
+
+    @Test
+    @DisplayName("GetMapping시 Valid 예외가 Advice 에서 정상적으로 처리되어야 한다")
+    void advice_post_get() throws Exception {
+        // given
+        UserRequest userRequest = UserRequest.builder()
+                .email("drogba02")
+                .name("woobeen")
+                .age(18)
+                .build();
+
+        // then
+        mockMvc.perform(get("/user")
+                .param("email" , userRequest.getEmail())
+                .param("name" , userRequest.getName())
+                .param("age" , Integer.toString(userRequest.getAge())))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString(EMAIL_EXCEPTION_MESSAGE)))
+                .andExpect(content().string(containsString(AGE_EXCEPTION_MESSAGE)))
+                .andDo(print());
+    }
+}
+```
+
+예상대로라면 위와 같이 400 error 를 리턴하고 email , age 에 대한 메시지를 리턴해줘야 정상입니다.  
+결과보겠습니다.
+
+![valid-test-code-7](https://user-images.githubusercontent.com/28802545/150508451-19381113-aa2c-47fd-b1b3-05aee0ce956d.png)
+
+하지만 실패했습니다. 에러 메시지를 보니 status()는 예상대로 받은것 같지만 에러메시지를 가져오지 못했네요.  
+왜 Post 시에는 가져오고 Get 으로는 못가져왔을까요?
+
+저희가 advice에서 선언한 **MethodArgumentNotValidException** 는 @RequestBody에 대한 exception 을 처리해주기 때문인데요.
+
+위 GetMapping 테스트코드는 ModelAttribute 방식으로 객체에 바인딩되게 됩니다.  
+ModelAttribute 방식으로 받은 파라미터에 대한 예외를 처리해주기 위해서는 **BindException** 을 advice에 선언해줘야 합니다.
+
+advice 에 BindException 에 대한 처리를 추가하겠습니다.
+
+```java
+@Override
+protected ResponseEntity<Object> handleBindException(BindException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
+    BindingResult result = ex.getBindingResult();
+    StringBuilder errMessage = new StringBuilder();
+
+    for (FieldError error : result.getFieldErrors()) {
+        errMessage.append("[")
+                .append(error.getField())
+                .append("] ")
+                .append(":")
+                .append(error.getDefaultMessage());
+    }
+
+    log.info("errMsg ### {}" , errMessage);
+    return new ResponseEntity<>(errMessage , HttpStatus.BAD_REQUEST);
+}
+```
+
+ResponseEntityExceptionHandler 클래스의 handleBindException 메소드를 재정의하여 BindException 에 대한 처리를 작성했습니다.  
+다시 테스트를 해보겠습니다.
+
+![valid-test-code-8](https://user-images.githubusercontent.com/28802545/150510293-28d38f91-79a7-417d-9898-437ceacd429d.png)
+
+이번엔 정상적으로 테스트가 통과되는것을 확인할수 있습니다.
 <br>
