@@ -28,7 +28,7 @@ Valid는 [**JSR-303(Bean Validation)**](https://beanvalidation.org/1.0/spec/) �
 
 <br>
 
-### **사용 예제**
+## **사용 예제**
 
 <hr>
 
@@ -172,7 +172,7 @@ void validTest2() throws Exception {
 
 <br>
 
-### **GetMapping**
+## **GetMapping**
 
 <hr>
 
@@ -228,7 +228,7 @@ status 400 에 "**이메일 형식이 맞지 않습니다.**" 라는 문자열�
 
 <br>
 
-### **PostMapping**
+## **PostMapping**
 
 <hr>
 
@@ -289,8 +289,6 @@ Post 방식도 동일합니다.
 <br>
 
 ## **advice 를 이용한 handling 방법**
-
-<hr>
 
 @Valid 에서 발생한 예외를 캐치해서 응답하는 로직을 만들어보겠습니다.
 
@@ -420,6 +418,8 @@ class ValidAdviceTest {
 
 **<u>위 GetMapping 테스트코드는 ModelAttribute 방식으로 객체에 바인딩되게 됩니다.</u>**  
 **<u>ModelAttribute 방식으로 받은 파라미터에 대한 예외를 처리해주기 위해서는 **BindException** 을 advice에 선언해줘야 합니다.</u>**
+
+`asdasd`
 
 advice 에 BindException 에 대한 처리를 추가하겠습니다.
 
