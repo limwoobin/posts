@@ -419,8 +419,6 @@ class ValidAdviceTest {
 **<u>위 GetMapping 테스트코드는 ModelAttribute 방식으로 객체에 바인딩되게 됩니다.</u>**  
 **<u>ModelAttribute 방식으로 받은 파라미터에 대한 예외를 처리해주기 위해서는 **BindException** 을 advice에 선언해줘야 합니다.</u>**
 
-`asdasd`
-
 advice 에 BindException 에 대한 처리를 추가하겠습니다.
 
 ```java
