@@ -276,7 +276,7 @@ Post 방식도 동일합니다.
 
 <br>
 
-# **advice 를 이용한 Exception Handling 적용**
+# **advice 를 이용한 exception handling 적용**
 
 위에서의 BindResult 를 선언해서 에러를 처리하다보니 몇가지 문제점이 보였습니다.
 
