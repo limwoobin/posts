@@ -83,7 +83,7 @@ public class UserRequest {
 
 UserController.java
 
-```
+```javascript
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/user")
