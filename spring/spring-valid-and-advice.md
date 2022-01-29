@@ -30,8 +30,6 @@ Valid는 [**JSR-303(Bean Validation)**](https://beanvalidation.org/1.0/spec/) �
 
 ## **사용 예제**
 
-<hr>
-
 환경
 
 - Spring boot 2.6.2
@@ -85,7 +83,7 @@ public class UserRequest {
 
 UserController.java
 
-```java
+```shell
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/user")
