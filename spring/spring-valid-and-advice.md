@@ -172,8 +172,6 @@ void validTest2() throws Exception {
 
 ## **GetMapping**
 
-<hr>
-
 ```java
 @GetMapping(value = "/v2")
 public ResponseEntity create(@Valid UserRequest userRequest , BindingResult bindingResult) {
