@@ -3,7 +3,7 @@
 > ## **Overview**
 >
 > - ### [**개요**](#개요)
-> - ### [**mapstruct**](#subject-1)
+> - ### [**mapstruct**](#mapstruct)
 >   - [**사용하기**](#사용하기)
 >   - [**객체 변환하기**](#객체-변환하기)
 >   - [**문제점**](#subject-2)
@@ -26,33 +26,27 @@
 이를 매핑하기 위해서는 **model mapper , 정적 팩토리 , object mapping** 등의 방법을 다양한 이용해 모델을 매핑하고 있습니다.  
 저는 제가 사용하는 **mapstruct** 에 대해 간략하게 소개하려고 합니다.
 
-```java
+<br>
 
-public class Template {
-	private int a;
-	private int b;
+# **mapstruct**
 
-	public Template(int a , int b) {
-		this.a = a;
-		this.b = b;
-	}
-}
+[**mapstruct github page**](#https://github.com/mapstruct/mapstruct#what-is-mapstruct)에서는 mapstrut를 다음과 같이 소개하고 있습니다.
 
-```
+> <br>
+> 간략하게 요약하면 다음과 같습니다.  <br>
+> 타입에 안전한 Bean Mapping 클래스를 생성하기 위한 Java Annotation Processing
+>
+> 런타임에 작동하는 Mapping framework 와 비교했을때 MapStruct 는 다음과 같은 이점을 갖는다
+>
+> - reflection 대신 일반 method 를 사용하기 때문에 빠름
+> - 컴파일시 오류를 확인할 수 있음
+> - Implementation code 를 제공해 쉽게 디버깅이 가능 , 직접 확인 가능
+>
+>   <br>
 
 <br />
-<br />
 
-`test word block`
-
-<br />
-<br />
-
-# Subject 1
-
-### content 0
-
-...
+## **사용하기**
 
 <br>
 <br>
