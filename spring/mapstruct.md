@@ -5,13 +5,15 @@
 > - ### [**개요**](#개요)
 > - ### [**mapstruct**](#mapstruct)
 >   - [**사용하기**](#사용하기)
->   - [**객체 변환하기**](#객체-변환하기)
->   - [**문제점**](#subject-2)
->     - [**NoArgsConstructer(access = AccessLevel.PROTECTED)**](#content-1)
->     - [**@Setter**](#content-2)
-> - ### [**mapstruct builder pattern**](#subject-3)
->   - [**content 3 / 4**](#content-3--4)
->   - [**문제점**](#zz) <br><br>
+>     - ##### [**일반적인 객체 매핑**](#일반적인-객체-매핑)
+>     - ##### [**객체 속성 무시하기**](#객체-속성-무시하기)
+>     - ##### [**다른 이름으로 매핑**](#다른-이름으로-매핑)
+>     - ##### [**객체에서 속성 꺼내서 매핑**](#객체에서-속성-꺼내서-매핑)
+>     - ##### [**객체 병합하기 1**](#객체-병합하기-1)
+>     - ##### [**객체 병합하기 2**](#객체-병합하기-2)
+> - [**리스트 변환하기**](#객체-변환하기)
+>   - [**qualifiedByName**](#content-1)
+>   - [**default method**](#content-2) <br><br>
 
 <br />
 
@@ -22,7 +24,7 @@
 # **개요**
 
 소스코드를 작성하다보면 Layer를 전환하며 객체를 전환하며 매핑하거나 여러 객체를 합치거나 하는 다양한 경우를 만나게 됩니다.  
-흔히 겪는 예시로는 presentation layer 에서는 DTO , service layer , repository layer 에서는 Entity 를 사용하는 예시를 들 수 있겠죠.  
+흔히 겪는 예시로는 presentation layer 에서는 DTO , service layer , repository layer 에서는 Entity 를 사용하는 예시를 들 수 있습니다.  
 이를 매핑하기 위해서는 **model mapper , 정적 팩토리 , object mapping** 등의 방법을 다양한 이용해 모델을 매핑하고 있습니다.  
 저는 제가 사용하는 **mapstruct** 에 대해 간략하게 소개하려고 합니다.
 
@@ -385,23 +387,117 @@ public class UserMapperImpl implements UserMapper {
 
 <br>
 
-# Subject 2
+# 리스트 전환하기
 
-### content 1
+**UserMapper.java**
 
-...
+```java
+@Mapper(componentModel = "spring")
+public interface UserMapper {
+	UserMapper INSTANCE = Mappers.getMapper(UserMapper.class);
+
+	UserDTO toUserDTO(User user);
+
+	@Mapping(target = "name" , ignore = true)
+	UserDTO toUserDTO_v2(User user);
+
+	List<UserDTO> toDTOList(List<User> users);
+}
+```
+
+다음과 같이 User에서 UserDTO 로 전환하는 mapper method가 두개가 있습니다. 그리고 List<User> 에서 List<UserDTO> 로 전환하는 메소드도 존재합니다.  
+하지만 위 코드를 build하게 되면 다음과 같은 에러를 뱉습니다.
+
+![mapsturct-image-1](https://user-images.githubusercontent.com/28802545/154836762-5a548f12-7a5f-43a7-9682-65c9cedc85dc.PNG)
+
+이유는 mapstruct 에서 List 내의 요소들을 매핑할때 **toUserDTO** 를 사용할지 **toUserDTO_v2** 를 사용할지 모르기 때문입니다.  
+만약 **toUserDTO** 하나만 있거나 아에 없었다면 정상적으로 컴파일 되었을겁니다.
+
 <br>
-<br>
 
-### content 2
+### **qualifiedByName**
 
-...
-<br>
-<br>
+mapstruct 에서는 다음과 같은 경우를 해결하기 위해 qualifiedByName 라는 기능을 지원합니다.  
+리스트가 순회시에 어떠한 mapper 를 사용할지 선택할 수 있습니다.
 
-# **Subject 3**
+**UserMapper.java**
 
-### content 3 / 4
+```java
+@Mapper(componentModel = "spring")
+public interface UserMapper {
+	UserMapper INSTANCE = Mappers.getMapper(UserMapper.class);
 
-...
+	UserDTO toUserDTO(User user);
+
+	@Mapping(target = "name" , ignore = true)
+	@Named("v2")
+	UserDTO toUserDTO_v2(User user);
+
+	@IterableMapping(qualifiedByName = "v2")
+	List<UserDTO> toDTOList(List<User> users);
+}
+```
+
+**toUserDTO_v2** 라는 메소드에 **v2** 라는 이름을 주었습니다. **toDTOList** 에서도 **v2** 이름의 메소드를 사용하게끔 명시했습니다.
+
+**UserMapperImpl.java**
+
+```java
+@Generated(
+    value = "org.mapstruct.ap.MappingProcessor",
+    date = "2022-02-20T18:45:45+0900",
+    comments = "version: 1.4.2.Final, compiler: IncrementalProcessingEnvironment from gradle-language-java-7.3.3.jar, environment: Java 11.0.10 (Oracle Corporation)"
+)
+@Component
+public class UserMapperImpl implements UserMapper {
+	@Override
+	public UserDTO toUserDTO(User user) {
+		if ( user == null ) {
+				return null;
+		}
+
+		UserDTOBuilder userDTO = UserDTO.builder();
+
+		userDTO.id( user.getId() );
+		userDTO.name( user.getName() );
+		userDTO.age( user.getAge() );
+
+		return userDTO.build();
+	}
+
+	@Override
+	public UserDTO toUserDTO_v2(User user) {
+		if ( user == null ) {
+				return null;
+		}
+
+		UserDTOBuilder userDTO = UserDTO.builder();
+
+		userDTO.id( user.getId() );
+		userDTO.age( user.getAge() );
+
+		return userDTO.build();
+	}
+
+	@Override
+	public List<UserDTO> toDTOList(List<User> users) {
+		if ( users == null ) {
+				return null;
+		}
+
+		List<UserDTO> list = new ArrayList<UserDTO>( users.size() );
+		for ( User user : users ) {
+				list.add( toUserDTO_v2( user ) );
+		}
+
+		return list;
+	}
+}
+```
+
+빌드가 정상적으로 실행되어 코드가 생성된걸 확인할 수 있습니다.  
+**toDTOList** 를 보시면 v2라는 이름으로 명시했던 toUserDTO_v2 메소드를 사용한걸 확인할 수 있네요
+
+### **default method**
+
 <br>
