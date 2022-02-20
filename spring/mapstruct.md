@@ -48,7 +48,341 @@
 
 ## **사용하기**
 
+mapstruct 의 사용 예시를 간략하게 소개하겠습니다.  
 <br>
+
+User.java
+
+```java
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    private int age;
+}
+```
+
+UserDTO
+
+```java
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class UserDTO {
+    private Long id;
+
+    private String name;
+
+    private int age;
+
+    private String address;
+}
+```
+
+User 에서 UserDTO 로 객체매핑을 하는 예시를 들어보겠습니다.
+
+#### **일반적인 객체 매핑**
+
+**UserMpaper.java**
+
+```java
+@Mapper(componentModel = "spring")
+public interface UserMapper {
+	UserDTO toUserDTO(User user);
+}
+```
+
+위의 코드를 빌드하게되면 아래와 같은 코드가 생성됩니다.
+
+**UserMpaperImpl.java**
+
+```java
+@Generated(
+    value = "org.mapstruct.ap.MappingProcessor",
+    date = "2022-02-20T16:39:40+0900",
+    comments = "version: 1.4.2.Final, compiler: IncrementalProcessingEnvironment from gradle-language-java-7.3.3.jar, environment: Java 11.0.10 (Oracle Corporation)"
+)
+@Component
+public class UserMapperImpl implements UserMapper {
+	@Override
+	public UserDTO toUserDTO(User user) {
+		if ( user == null ) {
+				return null;
+		}
+
+		UserDTO userDTO = new UserDTO();
+
+		userDTO.setId( user.getId() );
+		userDTO.setName( user.getName() );
+		userDTO.setAge( user.getAge() );
+
+		return userDTO;
+	}
+}
+```
+
+<br>
+
+#### **객체 속성 무시하기**
+
+**UserMpaper.java**
+
+```java
+@Mapper(componentModel = "spring")
+public interface UserMapper {
+	@Mapping(target = "name" , ignore = true)
+	UserDTO toUserDTO(User user);
+}
+```
+
+**UserMpaperImpl.java**
+
+```java
+@Generated(
+    value = "org.mapstruct.ap.MappingProcessor",
+    date = "2022-02-20T16:39:40+0900",
+    comments = "version: 1.4.2.Final, compiler: IncrementalProcessingEnvironment from gradle-language-java-7.3.3.jar, environment: Java 11.0.10 (Oracle Corporation)"
+)
+@Component
+public class UserMapperImpl implements UserMapper {
+	@Override
+	public UserDTO toUserDTO(User user) {
+		if ( user == null ) {
+				return null;
+		}
+
+		UserDTO userDTO = new UserDTO();
+
+		userDTO.setId( user.getId() );
+		userDTO.setAge( user.getAge() );
+
+		return userDTO;
+	}
+}
+```
+
+위와 같이 name 속성이 무시된것을 확인할 수 있습니다.
+
+<br>
+
+#### **다른 이름으로 매핑**
+
+**UserMpaper.java**
+
+```java
+@Mapper(componentModel = "spring")
+public interface UserMapper {
+	@Mapping(target = "address" , source = "name")
+	UserDTO toUserDTO(User user);
+}
+```
+
+**UserMpaperImpl.java**
+
+```java
+@Generated(
+    value = "org.mapstruct.ap.MappingProcessor",
+    date = "2022-02-20T16:39:40+0900",
+    comments = "version: 1.4.2.Final, compiler: IncrementalProcessingEnvironment from gradle-language-java-7.3.3.jar, environment: Java 11.0.10 (Oracle Corporation)"
+)
+@Component
+public class UserMapperImpl implements UserMapper {
+	@Override
+	public UserDTO toUserDTO(User user) {
+		if ( user == null ) {
+				return null;
+		}
+
+		UserDTO userDTO = new UserDTO();
+
+		userDTO.setAddress( user.getName() );
+		userDTO.setId( user.getId() );
+		userDTO.setName( user.getName() );
+		userDTO.setAge( user.getAge() );
+
+		return userDTO;
+	}
+}
+```
+
+User 의 name 이라는 필드값이 UserDTO 에 address 라는 필드값에 매핑된것을 확인할 수 있습니다.
+
+<br>
+
+#### **객체에서 속성 꺼내서 매핑**
+
+**Address.java**
+
+```java
+@Getter
+@Setter
+public class Address {
+	private String myAddress;
+}
+```
+
+**UserMpaper.java**
+
+```java
+@Mapper(componentModel = "spring")
+public interface UserMapper {
+	@Mapping(target = "address" , source = "address.myAddress")
+	UserDTO toUserDTO(User user , Address address);
+}
+```
+
+**UserMapperImpl.java**
+
+```java
+@Generated(
+    value = "org.mapstruct.ap.MappingProcessor",
+    date = "2022-02-20T16:39:40+0900",
+    comments = "version: 1.4.2.Final, compiler: IncrementalProcessingEnvironment from gradle-language-java-7.3.3.jar, environment: Java 11.0.10 (Oracle Corporation)"
+)
+@Component
+public class UserMapperImpl implements UserMapper {
+	@Override
+	public UserDTO toUserDTO(User user, Address address) {
+		if ( user == null && address == null ) {
+			return null;
+		}
+
+		UserDTO userDTO = new UserDTO();
+
+		if ( user != null ) {
+			userDTO.setId( user.getId() );
+			userDTO.setName( user.getName() );
+			userDTO.setAge( user.getAge() );
+		}
+		if ( address != null ) {
+			userDTO.setAddress( address.getMyAddress() );
+		}
+
+		return userDTO;
+	}
+}
+```
+
+address 내의 myAddress 필드가 UserDTO 의 address 에 매핑된것을 확인할 수 있습니다.
+
+<br>
+
+#### **객체 병합하기 1**
+
+**UserMpaper.java**
+
+```java
+@Mapper(componentModel = "spring")
+public interface UserMapper {
+	UserDTO toUserDTO(User user , String address);
+}
+```
+
+**UserMpaperImpl.java**
+
+```java
+@Generated(
+    value = "org.mapstruct.ap.MappingProcessor",
+    date = "2022-02-20T16:39:40+0900",
+    comments = "version: 1.4.2.Final, compiler: IncrementalProcessingEnvironment from gradle-language-java-7.3.3.jar, environment: Java 11.0.10 (Oracle Corporation)"
+)
+@Component
+public class UserMapperImpl implements UserMapper {
+	@Override
+	public UserDTO toUserDTO(User user, String address) {
+		if ( user == null && address == null ) {
+				return null;
+		}
+
+		UserDTO userDTO = new UserDTO();
+
+		if ( user != null ) {
+				userDTO.setId( user.getId() );
+				userDTO.setName( user.getName() );
+				userDTO.setAge( user.getAge() );
+		}
+		if ( address != null ) {
+				userDTO.setAddress( address );
+		}
+
+		return userDTO;
+	}
+}
+```
+
+<br>
+
+#### **객체 병합하기 2**
+
+```java
+public class UserDTO {
+	private Long id;
+
+	private String name;
+
+	private int age;
+
+	private AddressDTO addressDTO;
+}
+
+public class AddressDTO {
+	private String myAddress;
+}
+```
+
+**UserMpaper.java**
+
+```java
+@Mapper(componentModel = "spring")
+public interface UserMapper {
+	@Mapping(target = "addressDTO" , source = "address")
+	UserDTO toUserDTO(User user , Address address);
+}
+```
+
+**UserMpaperImpl.java**
+
+```java
+@Generated(
+    value = "org.mapstruct.ap.MappingProcessor",
+    date = "2022-02-20T16:39:40+0900",
+    comments = "version: 1.4.2.Final, compiler: IncrementalProcessingEnvironment from gradle-language-java-7.3.3.jar, environment: Java 11.0.10 (Oracle Corporation)"
+)
+@Component
+public class UserMapperImpl implements UserMapper {
+	@Override
+	public UserDTO toUserDTO(User user, Address address) {
+		if ( user == null && address == null ) {
+				return null;
+		}
+
+		UserDTO userDTO = new UserDTO();
+
+		if ( user != null ) {
+				userDTO.setId( user.getId() );
+				userDTO.setName( user.getName() );
+				userDTO.setAge( user.getAge() );
+		}
+		if ( address != null ) {
+				userDTO.setAddressDTO( addressToAddressDTO( address ) );
+		}
+
+		return userDTO;
+	}
+}
+```
+
+필드 속성뿐만 아니라 객체도 이름만 동일하다면 위와 같이 매핑되는것을 확인할 수 있습니다.
+
 <br>
 
 # Subject 2
