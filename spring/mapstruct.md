@@ -11,13 +11,13 @@
 >     - ##### [**객체에서 속성 꺼내서 매핑**](#객체에서-속성-꺼내서-매핑)
 >     - ##### [**객체 병합하기 1**](#객체-병합하기-1)
 >     - ##### [**객체 병합하기 2**](#객체-병합하기-2)
-> - [**리스트 변환하기**](#객체-변환하기)
+> - [**리스트 매핑하기**](#리스트-매핑하기)
 >   - [**qualifiedByName**](#qualifiedByName)
 >   - [**default method**](#default-method) <br><br>
 
 <br />
 
-#### [**예제 및 테스트 코드는 github 에서 확인 가능합니다.**](https://github.com/limwoobin)
+#### [**예제 및 테스트 코드는 github 에서 확인 가능합니다.**](https://github.com/limwoobin/blog-code-example/tree/master/mapstruct-example)
 
 <br />
 
@@ -387,7 +387,7 @@ public class UserMapperImpl implements UserMapper {
 
 <br>
 
-# 리스트 전환하기
+# **리스트 매핑하기**
 
 **UserMapper.java**
 
