@@ -12,8 +12,8 @@
 >     - ##### [**객체 병합하기 1**](#객체-병합하기-1)
 >     - ##### [**객체 병합하기 2**](#객체-병합하기-2)
 > - [**리스트 변환하기**](#객체-변환하기)
->   - [**qualifiedByName**](#content-1)
->   - [**default method**](#content-2) <br><br>
+>   - [**qualifiedByName**](#qualifiedByName)
+>   - [**default method**](#default-method) <br><br>
 
 <br />
 
