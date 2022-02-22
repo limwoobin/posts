@@ -496,8 +496,60 @@ public class UserMapperImpl implements UserMapper {
 ```
 
 빌드가 정상적으로 실행되어 코드가 생성된걸 확인할 수 있습니다.  
-**toDTOList** 를 보시면 v2라는 이름으로 명시했던 toUserDTO_v2 메소드를 사용한걸 확인할 수 있네요
+**toDTOList** 를 보시면 v2라는 이름으로 명시했던 toUserDTO_v2 메소드를 사용한걸 확인할 수 있습니다.
+
+<br>
 
 ### **default method**
+
+java8 이후부터 지원하는 interface 의 default method 를 이용하는것도 하나의 방법이 될 수 있습니다.
+
+**UserMapper.java**
+
+```java
+@Mapper(componentModel = "spring")
+public interface UserMapper {
+	UserMapper INSTANCE = Mappers.getMapper(UserMapper.class);
+
+	UserDTO toUserDTO(User user);
+
+	@Mapping(target = "name" , ignore = true)
+	@Named("v2")
+	UserDTO toUserDTO_v2(User user);
+
+	default List<UserDTO> toDTOList(List<User> users) {
+		return users.stream()
+			.map(this::toUserDTO_v2)
+			.collect(Collectors.toList());
+}
+```
+
+테스트 코드를 이용하여 확인해보겠습니다.
+
+```java
+public class MapStructTest {
+	private final UserMapper userMapper = Mappers.getMapper(UserMapper.class);
+
+	@DisplayName("List<Entity> to List<DTO> 로 전환하면 DTO 의 name 이 제거되어야 한다")
+	@Test
+	void mapper_test_6() {
+		// given
+		User 테스트_유저 = new User(1L , "테스트" , 15);
+		User 테스트_유저2 = new User(2L , "테스트2" , 22);
+
+		// when
+		List<User> users = List.of(테스트_유저, 테스트_유저2);
+		List<UserDTO> userDTOS = userMapper.toDTOList2(users);
+
+		// then
+		assertThat(userDTOS.get(0).getName()).isNull();
+		assertThat(userDTOS.get(1).getName()).isNull();
+	}
+}
+```
+
+![mapsturct-image-2](https://user-images.githubusercontent.com/28802545/155122896-3c950e6f-59e7-45f3-9b55-319ce9d0350b.PNG)
+
+테스트 코드가 정상적으로 통과된것을 확인할 수 있습니다.
 
 <br>
