@@ -55,7 +55,7 @@ mapstruct 의 사용 예시를 간략하게 소개하겠습니다.
 
 User.java
 
-```
+```java
 @Entity
 @Getter
 @Setter
