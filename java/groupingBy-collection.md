@@ -50,13 +50,85 @@ public class User {
 <br>
 위의 테스트 데이터로 그룹핑 예제를 작성해보겠습니다.
 
+<br>
+
 ### **단일 값으로 그룹핑**
+
+위의 값을 성별으로 그룹핑 해보겠습니다.  
+그렇다면 MALE이 5명, FEMALE이 4명이 되어야 합니다. 테스트코드로 확인해보겠습니다.
+
+```java
+
+@DisplayName("유저목록을 성별로 그룹핑하면 MALE 5명, FEMALE 4명이 되어야한다")
+@Test
+void grouping_test_1() {
+    // given
+    List<User> 유저_목록 = UserData.users;
+
+    // when
+    Map<Gender, List<User>> result = 유저_목록.stream()
+            .collect(groupingBy(User::getGender));
+
+    // then
+    List<User> 남자_회원_목록 = result.get(Gender.MALE);
+    List<User> 여자_회원_목록 = result.get(Gender.FEMALE);
+
+    assertEquals(남자_회원_목록.size(), 5);
+    assertEquals(여자_회원_목록.size(), 4);
+}
+
+```
+
+![grouping-image-1](https://user-images.githubusercontent.com/28802545/160381954-72b34aaa-2fe0-4db7-80fb-91760d54a810.PNG)
+
+성별로 그룹핑한 결과 정상적으로 나눠진것을 확인할 수 있습니다.
 
 ### **2개 이상의 값 그룹핑**
 
-...
+그렇다면 이번엔 성별 + 도시별로 나누어 보겠습니다. 성별로 나눠진 후에 도시별로 추가로 나뉘어 지겠네요.  
+MALE 의 경우 도시가 SEOUL, PARIS, LA 이 세곳에 살고있습니다. FEMALE 의 경우는 SEOUL, NEW_YORK, TOKYO 에 살고있네요.  
+그렇다면 성별 + 도시 기준으로 그룹핑하면
+MALE/SEOUL(1명), MALE/PARIS(2명), MALE/LA(2명), FEMALE/SEOUL(1명), FEMALE/NEW_YORK(1명), FEMALE/TOKYO(2명) 이렇게 그룹핑 될것입니다. 테스트 코드를 통해 확인해보겠습니다.
 
-<br>
+```java
+@DisplayName("유저목록을 성별, 도시별로 그룹핑하라")
+@Test
+void grouping_test_2() {
+    // given
+    List<User> 유저_목록 = UserData.users;
+
+    // when
+    Map<Gender, Map<City, List<User>>> result = 유저_목록.stream()
+            .collect(groupingBy(User::getGender, groupingBy(User::getCity)));
+
+    // then
+    Map<City, List<User>> 남자_그룹 = result.get(Gender.MALE);
+    Map<City, List<User>> 여자_그룹 = result.get(Gender.FEMALE);
+
+    List<User> 남자_SEOUL_그룹 = 남자_그룹.get(City.SEOUL);
+    List<User> 남자_PARIS_그룹 = 남자_그룹.get(City.PARIS);
+    List<User> 남자_LA_그룹 = 남자_그룹.get(City.LA);
+
+    List<User> 여자_SEOUL_그룹 = 여자_그룹.get(City.SEOUL);
+    List<User> 여자_NEW_YORK_그룹 = 여자_그룹.get(City.NEW_YORK);
+    List<User> 여자_TOKYO_그룹 = 여자_그룹.get(City.TOKYO);
+
+    assertEquals(남자_SEOUL_그룹.size(), 1);
+    assertEquals(남자_PARIS_그룹.size(), 2);
+    assertEquals(남자_LA_그룹.size(), 2);
+
+    assertEquals(여자_SEOUL_그룹.size(), 1);
+    assertEquals(여자_NEW_YORK_그룹.size(), 1);
+    assertEquals(여자_TOKYO_그룹.size(), 2);
+}
+```
+
+![grouping-image-2](https://user-images.githubusercontent.com/28802545/160383882-ee09de59-76d9-431d-9e35-238961913dd3.PNG)
+
+예상했던것과 같이 정상적으로 그룹핑된것을 확인할 수 있습니다. 하지만 문제가 있습니다.  
+지금까지는 1개 혹은 2개의 값으로 그룹핑을 진행해서 큰 무리없이 수행해왔습니다. 하지만 3개 혹은 그 이상의 값으로 그룹핑을 해야한다면 어떨까요?? 그룹핑하는 개수만큼 Map<T , Map<T2, Map<T3, Map<>>>> ... 이렇게 감싸서 원하는 객체를 만들어 사용할 수 있을까요? 아니면 이런 코드를 남들이 알아볼 수 있을까요?  
+이 이상의 값을 기준으로 그룹핑하는것은 가독성으로나 유지보수성으로나 좋지 않다고 생각합니다. 그래서 이를 해결할 수 있는 방법을 소개하려합니다.
+
 <br>
 
 # Subject 2
