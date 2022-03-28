@@ -51,6 +51,7 @@ public class User {
 | 9   | user9 | FEMALE | 31   | TOKYO    |
 
 <br>
+
 위의 테스트 데이터로 그룹핑 예제를 작성해보겠습니다.
 
 <br>
