@@ -36,10 +36,13 @@ Cache, Map, Set 의 요소가 변경되었다면 이를 갱신하는 작업이 �
 
 <u>**객체 생성에 대한 비용은 과대평가되고있으며, 이는 불변객체를 이용한 효율로 충분히 상쇄할 수 있다**</u> 라고 얘기합니다.
 
-[https://docs.oracle.com/javase/tutorial/essential/concurrency/immutable.html](https://docs.oracle.com/javase/tutorial/essential/concurrency/immutable.html)
+GC는 새롭게 생성된 객체는 금방 죽는다는 <u>**[Weak Generational Hypothesis](https://docs.oracle.com/javase/8/docs/technotes/guides/vm/gctuning/generations.html)**</u> 가설에 맞춰 설계되었습니다.  
+그래서 불변객체를 새로 생성한다 해서 GC입장에서는 생명주기가 짧은 객체를 처리하는것은 큰 부담이 되지 않습니다.  
+그리고 불변객체를 이용하면 불변객체 내부의 객체에 대해서는 GC 스캔 대상에 제외됩니다.  
+즉, 불변객체를 이용하면 GC의 스캔빈도와 범위가 줄게되어 GC의 성능에 도움이 된다고 할 수 있습니다.  
+하지만 가변객체는 일반적으로 상태를 변경하는 형식으로 사용되고 있기에 불변객체보다 생명주기가 길다고 볼 수 있습니다. 그리고 지속적으로 GC의 스캔범위, 스캔빈도에 포함되어 불변객체보다는 GC성능상 이점이 없습니다.
 
-불변객체를 이용하면 불변객체 내부의 객체에 대해서는 GC 스캔 대상에 제외됩니다.  
-즉, 불변객체를 이용하면 GC의 스캔빈도와 범위가 줄게되어 GC의 성능에 도움이 된다고 할 수 있습니다.
+[https://docs.oracle.com/javase/tutorial/essential/concurrency/immutable.html](https://docs.oracle.com/javase/tutorial/essential/concurrency/immutable.html)
 
 <br>
 
