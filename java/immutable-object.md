@@ -1,4 +1,4 @@
-[**예제 및 테스트 코드는 github 에서 확인 가능합니다.**](https://github.com/limwoobin/blog-code-example/tree/master/java-grouping-example)
+[**예제 및 테스트 코드는 github 에서 확인 가능합니다.**](https://github.com/limwoobin/blog-code-example/tree/master/java-tech-example/src/main/java/immutable)
 
 <br>
 
@@ -9,7 +9,7 @@
 
 <br>
 
-## **불변 객체(Immutable Object) 의 장점**
+# **불변 객체(Immutable Object) 의 장점**
 
 #### **Thread-Safe하여 병렬 프로그래밍에 유용하고 동기화를 고려하지 않아도 된다.**
 
@@ -46,7 +46,7 @@ GC는 새롭게 생성된 객체는 금방 죽는다는 <u>**[Weak Generational 
 
 <br>
 
-## **불변객체 생성 규칙**
+# **불변객체 생성 규칙**
 
 불변객체를 생성할때는 다음과 같은 규칙이 있습니다.
 
@@ -76,14 +76,12 @@ public final class ImmutableObj {
 
 <br>
 
-## **불변객체 작성시 유의사항**
-
-<hr>
+# **불변객체 작성시 유의사항**
 
 불변객체 작성시 유의사항을 정리해보았습니다.  
 아래 경우에 대한 예제코드와 함께 살펴보겠습니다.
 
-### **reference type이 필드로 있는 경우**
+## **reference type이 필드로 있는 경우**
 
 ```java
 public class Amount {
@@ -195,7 +193,152 @@ Amount를 방어적 복사가 아닌 불변객체를 이용하면 마찬가지�
 
 <br>
 
-### **collection이 필드로 있는 경우**
+## **Collection이 필드로 있는 경우**
+
+```java
+public final class ImmutableCollection {
+    private final int num;
+    private final List<Integer> list;
+
+    public ImmutableCollection(int num, List<Integer> list) {
+        this.num = num;
+        this.list = list;
+    }
+
+    public int getNum() {
+        return num;
+    }
+
+    public List<Integer> getList() {
+        return list;
+    }
+}
+```
+
+해방 불변객체는 List라는 CollectionType을 필드로 가지고 있습니다. 코드를 이용해 문제점을 살펴보겠습니다.
+
+```java
+@DisplayName("불변 객체 Collection 테스트")
+class ImmutableCollectionTest {
+
+    @Test
+    void immutable_test() {
+        List<Integer> list = new ArrayList<>();
+        list.add(1);
+
+        ImmutableCollection immutableCollection = new ImmutableCollection(10, list);
+        System.out.println(immutableCollection.getList());
+
+        List<Integer> newList = immutableCollection.getList();
+        newList.add(2);
+
+        System.out.println(immutableCollection.getList());
+    }
+}
+```
+
+다음 코드는 List를 ImmutableCollection로 전달합니다. 그리고 해당 List를 가져온 후 새로운 요소를 추가합니다.  
+과연 ImmutableCollection는 상태가 어떻게 될지 확인해보겠습니다.
+
+![immutable-image-3](https://user-images.githubusercontent.com/28802545/188298828-59b1750a-88c6-4a6a-b8e3-e2756f577205.png)
+
+위 이미지와 같이 ImmutableCollection의 상태가 변경된 것을 확인할 수 있습니다.  
+Collection 역시 참조가 연결되어 있기 때문입니다. 이를 방어하기 위해선 방어적 복사, UnmodifiableList와 같은 Unmodifiable Collection을 사용하는 방법이 있습니다.  
+Unmodifiable Collection은 값 변경시 예외를 발생시킵니다. 그래서 직접 예외를 처리해주어야 하기 때문에 방어적 복사를 이용해보겠습니다.
+
+<br>
+
+```java
+public final class ImmutableCollection {
+    private final int num;
+    private final List<Integer> list;
+
+
+    public ImmutableCollection(int num, List<Integer> list) {
+        this.num = num;
+        this.list = new ArrayList<>(list);
+    }
+
+    public int getNum() {
+        return num;
+    }
+
+    public List<Integer> getList() {
+        return new ArrayList<>(list);
+    }
+}
+```
+
+![immutable-image-4](https://user-images.githubusercontent.com/28802545/188299879-81d9c671-7040-4590-9637-d6a89ce2b955.png)
+
+다음과 같이 외부의 변경에도 Collection의 값은 변하지 않는 것을 확인할 수 있습니다.
+
+하지만 위 예제에서 사용된 `List<Integer>` 의 Integer는 불변객체였습니다 가변객체가 들어온다면 어떻게 될까요?  
+해당 Collection을 `List<Amount>` 로 변경해서 다시 테스트해보겠습니다.
+
+<br>
+
+## **Collection의 요소가 가변객체인 경우**
+
+<br>
+
+```java
+public final class ImmutableCollection {
+    private final List<Amount> amounts;
+
+    public ImmutableCollection(List<Amount> amounts) {
+        this.amounts = new ArrayList<>(amounts);
+    }
+
+    public List<Amount> getAmounts() {
+        return new ArrayList<>(amounts);
+    }
+
+}
+
+```
+
+```java
+@DisplayName("불변 객체 Collection 테스트")
+class ImmutableCollectionTest {
+
+    @Test
+    void immutable_test() {
+        Amount amount = new Amount(1);
+        Amount amount2 = new Amount(2);
+        List<Amount> amounts = List.of(amount, amount2);
+
+        ImmutableCollection immutableCollection = new ImmutableCollection(amounts);
+        System.out.println(immutableCollection.getAmounts());
+
+        amount2.setValue(100);
+        System.out.println(immutableCollection.getAmounts());
+    }
+}
+```
+
+List에 Amount객체를 넣고 ImmutableCollection에 전달해 객체를 생성합니다.  
+그리고 amount2의 값을 100으로 변경합니다. 테스트를 통해 결과를 확인해보겠습니다.
+
+![immutable-image-5](https://user-images.githubusercontent.com/28802545/188300613-e5ea7d84-ada6-424c-8f57-198a20e03297.png)
+
+방어적 복사를 했음에도 바깥 Collection의 참조는 끊어졌지만 내부 Object에 대한 참조는 끊기지 않음을 확인할 수 있습니다.
+
+```java
+@HotSpotIntrinsicCandidate
+public static native void arraycopy(Object src,  int  srcPos,
+                                    Object dest, int destPos,
+                                    int length);
+```
+
+방어적 복사시 호출되는 `arraycopy`는 얕은 복사를 이용해 객체를 카피하기 때문에 참조가 유지되게 됩니다.
+
+[https://docs.oracle.com/javase/7/docs/api/java/lang/System.html](https://docs.oracle.com/javase/7/docs/api/java/lang/System.html)
+
+결국 ImmutableCollection 객체는 불변성이 보장되지 않는 객체인 것입니다.  
+결국 불변객체를 사용하기 위해서는 사용되는 필드 마찬가지로 불변객체를 사용하는것이 안전하다고 볼 수 있습니다.
+
+감사합니다.
 
 <br>
 
