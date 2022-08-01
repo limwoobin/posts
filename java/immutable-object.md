@@ -78,17 +78,128 @@ public final class ImmutableObj {
 
 ## **불변객체 작성시 유의사항**
 
+<hr>
+
 불변객체 작성시 유의사항을 정리해보았습니다.  
 아래 경우에 대한 예제코드와 함께 살펴보겠습니다.
 
-1. primitive type이 필드로 있는 경우
-2. reference type이 필드로 있는 경우
-3. collection이 필드로 있는 경우
+### **reference type이 필드로 있는 경우**
+
+```java
+public class Amount {
+    private int value;
+
+    public Amount(int value) {
+        this.value = value;
+    }
+
+    public void setValue(int value) {
+        this.value = value;
+    }
+
+    public int getValue() {
+        return value;
+    }
+
+    @Override
+    public String toString() {
+        return "amount=" + value;
+    }
+}
+```
+
+```java
+public final class ImmutableReference {
+    private final int num;
+    private final Amount amount;
+
+    public ImmutableReference(int num, Amount amount) {
+        this.num = num;
+        this.amount = amount;
+    }
+
+    public int getNum() {
+        return num;
+    }
+
+    public Amount getAmount() {
+        return amount;
+    }
+}
+```
+
+해당 불변객체는 int라는 primitive type, CustomTime이라는 reference type을 가지고 있습니다.  
+이 불변객체는 어느 문제가 되고 있을지 같이 알아보겠습니다.
+
+보기엔 불변객체로서의 모습을 모두 갖춘것처럼 보여집니다.
+과연 어느 부분이 문제일지 코드를 이용해 확인해보겠습니다.
+
+```java
+@DisplayName("불변 객체 테스트")
+class ImmutableReferenceTest {
+
+    @Test
+    void immutable_test() {
+        Amount amount = new Amount(10);
+
+        ImmutableReference immutableReference = new ImmutableReference(10, amount);
+        System.out.println(immutableReference.getAmount()); // (1)
+
+        Amount newAmount = immutableReference.getAmount();
+        newAmount.setCount(50);
+
+        System.out.println(immutableReference.getAmount()); // (2)
+    }
+}
+```
+
+![immutable-image-1](https://user-images.githubusercontent.com/28802545/188297925-197b523c-ffdc-4069-bd78-c4a3fd47ff08.png)
+
+코드는 다음과 같습니다.
+ImmutableReference로 부터 amount를 가져온 이후에 외부에서 amount의 값을 변경했습니다.  
+하지만 변경된 값이 newAmount에만 적용된 것이 아닌 ImmutableReference에도 적용된것을 확인할 수 있습니다.
+
+이 객체의 문제는 다음과 같습니다. 불변객체의 필드로 선언한 Amount 객체의 참조가 외부와 연결되어 있어 그렇습니다.  
+그렇기 때문에 안전한 객체를 만드려면 불변객체 내부의 필드 또한 불변객체로 선언되어야 합니다. 혹은 방어적 복사를 이용해 참조관계를 끊어주어야 합니다.  
+그래야 외부로부터의 변경에 안전하게 사용할 수 있습니다.
+
+ImmutableReference 객체를 방어적 복사를 이용해 참조를 끊어보겠습니다.
+
+```java
+public final class ImmutableReference {
+    private final int num;
+    private final Amount amount;
+
+    public ImmutableReference(int num, Amount amount) {
+        this.num = num;
+        this.amount = new Amount(amount.getValue()); // (1)
+    }
+
+    public int getNum() {
+        return num;
+    }
+
+    public Amount getAmount() {
+        return new Amount(amount.getValue()); // (2)
+    }
+}
+```
+
+(1): 전달받은 Amount 객체가 외부에서 변경될 수 있어 참조를 끊음
+(2): 외부로 전달한 Amount 객체가 외부에서 변경될 수 있어 참조를 끊음
+
+![immutable-image-2](https://user-images.githubusercontent.com/28802545/188298378-76e4a30f-3986-4a17-954d-5e8987a1709e.png)
+
+다음과 같이 방어적 복사를 이용한해 참조관계를 끊고 실행하니 아까와는 달리 외부의 변경에도 불변객체는 값이 변하지 않는것을 확인할 수 있습니다.  
+Amount를 방어적 복사가 아닌 불변객체를 이용하면 마찬가지로 객체의 불변성을 지킬 수 있습니다.
+
+<br>
+
+### **collection이 필드로 있는 경우**
 
 <br>
 
 ## reference
 
-[https://ko.wikipedia.org/wiki/%EB%B6%88%EB%B3%80%EA%B0%9D%EC%B2%B4](https://ko.wikipedia.org/wiki/%EB%B6%88%EB%B3%80%EA%B0%9D%EC%B2%B4)  
 [https://howtodoinjava.com/java/basics/how-to-make-a-java-class-immutable/](https://howtodoinjava.com/java/basics/how-to-make-a-java-class-immutable/)  
 [https://www.baeldung.com/java-immutable-object](https://www.baeldung.com/java-immutable-object)
