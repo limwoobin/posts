@@ -55,4 +55,190 @@ JPA에서의 낙관적 락을 처리하는 방법은 **@Version Annotation** 을
 [transaction-2] : 치킨A를 구매 / 치킨A 재고: 0개, version: 2 로 업데이트하고 커밋하려는데 version이 처음 조회했던 1이 아니라 [transaction-1]에서 2로 변경되어 현재 조회한 버전과 다르므로 업데이트 실패
 ```
 
-그렇다면 이 과정을 코드예제로 한번 보여드리겠습니다.
+```sql
+update stock
+set
+	availableStock = ?,
+	version = 2
+where
+	id = ?
+	and version = 1
+```
+
+위와 같은 쿼리가 발생하지만 해당 재고의 version은 `transaction-1` 으로 인해 이미 2로 증가된 상태입니다. 이때 처음 조회했던 version값인 1을 전달하게 되니 업데이트할 대상을 찾지 못해 예외가 발생합니다.
+
+그렇다면 이 과정을 코드예제로 한번 보겠습니다.
+
+Stock.java
+
+```java
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Version;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Entity
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter
+public class Stock {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    private Long availableStock;
+
+    @Version
+    private Long version;
+
+    public Stock(String name, Long availableStock) {
+        this.name = name;
+        this.availableStock = availableStock;
+    }
+
+    public static Stock createStock(String name, Long availableStock) {
+        return new Stock(name, availableStock);
+    }
+
+
+    public void decrease(Long pickingCount) {
+        validateStockCount(pickingCount);
+        availableStock -= pickingCount;
+    }
+
+    private void validateStockCount(Long pickingCount) {
+        if (pickingCount > availableStock) {
+            throw new IllegalArgumentException();
+        }
+    }
+}
+```
+
+StockService.java
+
+```java
+import com.example.lockexample.domain.Stock;
+import com.example.lockexample.domain.StockRepository;
+import com.example.lockexample.ui.StockRequest;
+import com.example.lockexample.ui.StockResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+public class StockService {
+    private final StockRepository stockRepository;
+
+    @Transactional
+    public StockResponse createStock(StockRequest stockRequest) {
+        Stock stock = stockRequest.toStock();
+        stockRepository.save(stock);
+        return StockResponse.toResponse(stock);
+    }
+
+    @Transactional
+    public void decrease(Long stockId, Long pickingCount) {
+        Stock stock = stockRepository.findById(stockId)
+            .orElseThrow(IllegalStateException::new);
+
+        stock.decrease(pickingCount);
+    }
+}
+```
+
+StockRepository.java
+
+```java
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface StockRepository extends JpaRepository<Stock, Long> {
+
+}
+
+```
+
+다음과 같이 Stock Entity 내의 @Version 으로 version field 를 선언해서 테스트를 해보겠습니다.  
+동시성을 테스트하고 코드로 검증하기 위해서는 직접 멀티스레드를 이용한 테스트를 구현해야 합니다.  
+제가 작성한 테스트 코드는 다음과 같습니다.
+
+StockOptimisticLockTest.java
+
+```java
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.example.lockexample.application.StockService;
+import com.example.lockexample.domain.Stock;
+import com.example.lockexample.domain.StockRepository;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.OptimisticLockingFailureException;
+
+@DisplayName("낙관적락 재고 선점 테스트")
+@SpringBootTest
+class StockOptimisticLockTest {
+
+    @Autowired
+    StockService stockService;
+
+    @Autowired
+    StockRepository stockRepository;
+
+    @Test
+    void 낙관적락_재고_선점_테스트() throws InterruptedException {
+        Stock savedStock = 재고_1개_생성();
+        int numberOfThreads = 3;
+
+        ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
+
+        Future<?> future = executorService.submit(
+            () -> stockService.decrease(savedStock.getId(), 1L));
+        Future<?> future2 = executorService.submit(
+            () -> stockService.decrease(savedStock.getId(), 1L));
+        Future<?> future3 = executorService.submit(
+            () -> stockService.decrease(savedStock.getId(), 1L));
+
+        Exception result = new Exception();
+
+        try {
+            future.get();
+            future2.get();
+            future3.get();
+        } catch (ExecutionException e) {
+            result = (Exception) e.getCause();
+        }
+
+        assertTrue(result instanceof OptimisticLockingFailureException);
+    }
+
+    Stock 재고_1개_생성() {
+        Stock stock = Stock.createStock("불닭볶음면", 1L);
+        stockRepository.save(stock);
+        return stock;
+    }
+}
+```
+
+테스트 시나리오는 다음과 같습니다.
+
+```
+1. 불닭볶음면 재고를 한개 생성한다.
+2. 생성된 재고에 재고1개를 차감하는 요청 세 개를 동시에 보낸다.
+3. 세 개의 요청이 동시에 재고를 차감하다 버전 충돌이 발생해 OptimisticLockingFailureException을 발생한다.
+```
+
+![optimistic-lock](https://user-images.githubusercontent.com/28802545/187021259-f4219d0f-967b-497f-a180-fb622456c86b.png)
+
+테스트 결과를 보면 정상적으로 OptimisticLockingFailureException 이 발생하여 테스트를 통과한것을 확인할 수 있습니다.
