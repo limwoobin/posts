@@ -160,6 +160,11 @@ class RedisCrudTest {
 ## **Embedded Redis**
 
 ```java
+//embedded-redis
+implementation group: 'it.ozimov', name: 'embedded-redis', version: '0.7.1'
+```
+
+```java
 package com.example.redisexample;
 
 import org.junit.jupiter.api.DisplayName;
@@ -199,7 +204,10 @@ public class EmbeddedRedisConfig {
 
 ![redis-test-image1](https://user-images.githubusercontent.com/28802545/190381829-1a508329-dc73-4791-857b-6b8678ed4e8f.png)
 
-정상적으로 테스트가 통과한것을 확인할 수 있습니다.  
+정상적으로 테스트가 통과한것을 확인할 수 있습니다.
+
+<br>
+
 하지만 `Embedded Redis`에도 문제가 있습니다. `Embedded Redis`는 테스트시 새로운 스프링 컨텍스트가 생성되면 `Embedded Redis`를 새로 띄우게 됩니다.  
 이 과정에서 `Redis`의 기본포트인 6379가 이미 사용중이기 때문에 `Embedded Redis`를 띄우지 못하고 테스트 역시 실패되는 것입니다.
 
@@ -225,10 +233,23 @@ class RedisCrudTest2 {
 
 `@SpringBootTest` 설정을 다르게 주어 스프링 컨텍스트가 새로 띄워지게 의도했습니다. 그리고 테스트를 실행해보겠습니다.
 
+![redis-test-image2](https://user-images.githubusercontent.com/28802545/190388272-c1948c54-ed8b-4899-9afc-bdd2f989e7cd.png)
+
+다음과 같이 `Embedded Redis` 가 실행되지 못해 실패로 띄워지는것을 확인 할 수 있습니다.
+
+<br>
+
+그리고 한가지 문제가 또 있습니다.  
+`Embedded Redis` 라이브러리는 지속적인 업데이트나 개선이 이뤄지고 있지 않습니다.  
+[it.ozimov](https://github.com/ozimov/embedded-redis) 의 최근 커밋은 2020년 6월 입니다.  
+다른 라이브러리인 [kstyrc](https://github.com/kstyrc/embedded-redis) 는 더 이전인 2018년 9월이 마지막인것을 알 수 있습니다.
+
 <br>
 <hr>
 
 ## **TestContainer**
+
+### Testcontainer 란?
 
 <br>
 <hr>
