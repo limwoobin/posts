@@ -249,9 +249,21 @@ class RedisCrudTest2 {
 
 ## **TestContainer**
 
-### Testcontainer 란?
+TestContainer는 테스트 환경에서 도커 컨테이너를 실행할 수 있는 라이브러리 입니다.  
+Testcontainer 를 이용하면 테스트시에 좀 더 production환경에 가까운 테스트를 할 수 있습니다.  
+ex) `일반적인 h2 db 대신 mysql container를 이용한 테스트`
 
 <br>
+
+그리고 도커만 설치되어 있다면 별도의 환경구축이 필요하지 않습니다. 다만, 컨테이너를 생성,삭제하는 과정이 있기 때문에
+테스트가 느려진다는 단점이 존재합니다.
+
+이제 TestContainer를 이용하여 Redis Container 를 구축해보겠습니다.
+
+<br>
+
+### **Redis Container 구축하기**
+
 <hr>
 
 ## Reference
