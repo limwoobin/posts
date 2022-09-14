@@ -159,10 +159,14 @@ class RedisCrudTest {
 
 ## **Embedded Redis**
 
+build.gradle
+
 ```java
 //embedded-redis
 implementation group: 'it.ozimov', name: 'embedded-redis', version: '0.7.1'
 ```
+
+EmbeddedRedisConfig.java
 
 ```java
 package com.example.redisexample;
@@ -263,6 +267,50 @@ ex) `일반적인 h2 db 대신 mysql container를 이용한 테스트`
 <br>
 
 ### **Redis Container 구축하기**
+
+build.gradle
+
+```java
+// test-containers
+testImplementation group: 'org.testcontainers', name: 'testcontainers', version: '1.17.2'
+```
+
+<br>
+
+RedisTestContainers.java
+
+```java
+import org.junit.jupiter.api.DisplayName;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.utility.DockerImageName;
+
+@DisplayName("Redis Test Containers")
+@Profile("test")
+@Configuration
+public class RedisTestContainers {
+
+    private static final String REDIS_DOCKER_IMAGE = "redis:5.0.3-alpine";
+
+    static {    // (1)
+        GenericContainer<?> REDIS_CONTAINER =
+            new GenericContainer<>(DockerImageName.parse(REDIS_DOCKER_IMAGE))
+                .withExposedPorts(6379)
+                .withReuse(true);
+
+        REDIS_CONTAINER.start();    // (2)
+
+        // (3)
+        System.setProperty("spring.redis.host", REDIS_CONTAINER.getHost());
+        System.setProperty("spring.redis.port", REDIS_CONTAINER.getMappedPort(6379).toString());
+    }
+}
+```
+
+(1) - `redis:5.0.3-alpine` 라는 이미지에 새 컨테이너를 생성한다.
+
+(2) - Redis Container 를 실행한다.
 
 <hr>
 
