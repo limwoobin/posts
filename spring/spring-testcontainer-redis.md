@@ -287,7 +287,7 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
 
 @DisplayName("Redis Test Containers")
-@Profile("test")
+@ActiveProfile("test")
 @Configuration
 public class RedisTestContainers {
 
@@ -308,9 +308,14 @@ public class RedisTestContainers {
 }
 ```
 
-(1) - `redis:5.0.3-alpine` 라는 이미지에 새 컨테이너를 생성한다.
+- (1) `redis:5.0.3-alpine` 라는 이미지에 새 컨테이너를 생성한다.
+- (2) Redis Container 를 실행한다.
+  - withExposedPorts: container의 port를 6379로 연다.
+  - withReuse: 해당 컨테이너를 재사용한다.
+- (3) RedisContainer 와 연결하기 위해 host, port를 매핑한다.
 
-(2) - Redis Container 를 실행한다.
+다음과 같이 설정하면 테스트 실행시 도커로 Redis Container를 띄울 수 있습니다.  
+이제 테스트를 통해 확인해보겠습니다.
 
 <hr>
 
