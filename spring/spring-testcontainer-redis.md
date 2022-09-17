@@ -67,9 +67,8 @@ public class Product {
 }
 ```
 
-Spring Data JPA를 사용해 객체를 redis에 저장하기 위해 `@RedisHash` 를 사용했습니다.
+Spring Data를 이용해 객체를 redis에 저장하기 위해 `@RedisHash`를 사용했습니다.
 
-<br>
 <br>
 
 ProductRepository.java
@@ -81,9 +80,9 @@ public interface ProductRepository extends CrudRepository<Product, String> {
 }
 ```
 
-<br>
-
 해당 Product 객체를 CRUD하는 테스트 코드를 작성해보겠습니다.
+
+<br>
 
 RedisCrudTest.java
 
@@ -203,7 +202,7 @@ public class EmbeddedRedisConfig {
 }
 ```
 
-다음은 it.ozimov 라이브러리를 이용한 Embedded Redis 설정 방법입니다.  
+it.ozimov 라이브러리를 이용해 Embedded Redis 를 적용했습니다.  
 테스트 코드를 실행해보겠습니다.
 
 ![redis-test-image1](https://user-images.githubusercontent.com/28802545/190381829-1a508329-dc73-4791-857b-6b8678ed4e8f.png)
@@ -213,7 +212,7 @@ public class EmbeddedRedisConfig {
 <br>
 
 하지만 `Embedded Redis`에도 문제가 있습니다. `Embedded Redis`는 테스트시 새로운 스프링 컨텍스트가 생성되면 `Embedded Redis`를 새로 띄우게 됩니다.  
-이 과정에서 `Redis`의 기본포트인 6379가 이미 사용중이기 때문에 `Embedded Redis`를 띄우지 못하고 테스트 역시 실패되는 것입니다.
+이 과정에서 `Redis`의 기본포트인 6379가 이미 사용중이기 때문에 새로운 `Embedded Redis`를 띄우지 못하고 테스트는 실패하게 됩니다.
 
 <br>
 
