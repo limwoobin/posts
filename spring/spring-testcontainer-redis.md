@@ -314,8 +314,36 @@ public class RedisTestContainers {
   - withReuse: 해당 컨테이너를 재사용한다.
 - (3) RedisContainer 와 연결하기 위해 host, port를 매핑한다.
 
-다음과 같이 설정하면 테스트 실행시 도커로 Redis Container를 띄울 수 있습니다.  
-이제 테스트를 통해 확인해보겠습니다.
+다음과 같이 설정하면 테스트 실행시 도커로 Redis Container를 띄울 수 있습니다.
+
+<br>
+
+이제 테스트 코드를 실행해보겠습니다.
+
+![redis-test-image3](https://user-images.githubusercontent.com/28802545/190628972-c8af0b8e-6399-48cb-916b-ecf041c1757e.png)
+
+테스트를 실행하면 도커 컨테이너가 새로 띄워지는 것을 확인할 수 있습니다.
+redis 컨테이너는 지정한 `redis:5.0.3-alpine` 이미지로 띄워진 것을 볼 수 있습니다.  
+그렇다면 ryuk container는 뭐하는 컨테이너일까요?
+
+<br>
+ 
+### __Ryuk Container__
+
+[Docker](https://hub.docker.com/r/testcontainers/ryuk)에서 이야기하는 Ryuk Container의 역할은 다음과 같습니다.
+
+> This project helps you to remove containers/networks/volumes/images by given filter after specified delay.
+
+Ryuk은 테스트에 사용되는 컨테이너를 관리합니다. 테스트 컨테이너를 모니터링하고 테스트가 종료되면 컨테이너/이미지를 종료/삭제하는 일을 합니다.
+
+테스트 결과를 확인해보겠습니다.
+
+![redis-test-image4](https://user-images.githubusercontent.com/28802545/190847909-aaa7de17-6022-45c6-a0dc-1c991fae344a.png)
+
+정상적으로 테스트가 통과된것을 확인할 수 있습니다.  
+이렇게 EmbeddedRedis, TestContainer를 이용한 테스트방법을 알아보았습니다.
+
+감사합니다.
 
 <hr>
 
