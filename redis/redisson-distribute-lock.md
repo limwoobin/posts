@@ -41,7 +41,10 @@ Redisson은 다음과 같은 장점이 있습니다.
 
 <hr>
 
-## **Redisson 분산락 사용방법**
+### **Redisson 분산락 사용방법**
+
+Spring에서 Redisson을 사용하기 위해선 아래의 의존성이 필요합니다.  
+그리고 Redisson에서 제공하는 인터페이스와 사용법을 간략하게 소개하겠습니다.
 
 build.gradle
 
@@ -64,7 +67,7 @@ boolean tryLock(long waitTime, long leaseTime, TimeUnit unit) throws Interrupted
 - leaseTime: 락을 임대하는 시간
 - unit: 시간 단위
 
-분산락 예제
+<br>
 
 ```java
 RLock rLock = redissonClient.getLock(key); // (1)
@@ -75,7 +78,7 @@ try {
 			return false;
 		}
 
-		// ...
+		// 락 획득 후 수행 로직...
 } catch (InterruptedException e) {
 		e.printStackTrace();
 		throw new InterruptedException();
@@ -90,6 +93,10 @@ try {
 (3) - 획득 실패시 Lock을 subscribe 하며 해제되길 기다린다
 (4) - finally에서 Lock을 해제한다
 ```
+
+<hr>
+
+## **Redisson 분산락 annotation 기반으로 사용하기**
 
 <hr>
 
