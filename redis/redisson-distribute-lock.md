@@ -41,7 +41,55 @@ Redisson은 다음과 같은 장점이 있습니다.
 
 <hr>
 
-## **Redisson 분산락 코드 구현**
+## **Redisson 분산락 사용방법**
+
+build.gradle
+
+```java
+dependencies {
+	// redisson
+	implementation 'org.redisson:redisson-spring-boot-starter:3.17.4'
+}
+```
+
+Redisson에서는 Lock을 사용하기 위해 `RLock` 이라는 인터페이스를 제공합니다.
+
+락을 획득하기 위해서는 `tryLock`이라는 메소드를 이용합니다.
+
+```java
+boolean tryLock(long waitTime, long leaseTime, TimeUnit unit) throws InterruptedException;
+```
+
+- waitTime: 락을 획득하기 위한 대기 시간
+- leaseTime: 락을 임대하는 시간
+- unit: 시간 단위
+
+분산락 예제
+
+```java
+RLock rLock = redissonClient.getLock(key); // (1)
+
+try {
+		boolean available = rLock.tryLock(5, 3, TimeUnit.SECONDS); // (2)
+		if (!available) {	// (3)
+			return false;
+		}
+
+		// ...
+} catch (InterruptedException e) {
+		e.printStackTrace();
+		throw new InterruptedException();
+} finally {
+		rLock.unlock(); // (4)
+}
+```
+
+```Shell
+(1) - key 이름에 해당하는 RLock 인스턴스를 가져온다
+(2) - Lock 획득을 시도한다 (성공: true / 실패: false)
+(3) - 획득 실패시 Lock을 subscribe 하며 해제되길 기다린다
+(4) - finally에서 Lock을 해제한다
+```
 
 <hr>
 
