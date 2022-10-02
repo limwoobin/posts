@@ -100,23 +100,100 @@ try {
 
 ## **Redisson 분산락 annotation 기반으로 사용하기**
 
-Stock 재고차감
-시나리오1
+저는 Redisson 분산락 처리를 annotation 기반으로 작성해서 사용해보았습니다.  
+annotation기반으로 분산락을 사용하려는 이유는 다음과 같습니다.
 
-1. 재고100개 생성
-2. 동시성 thread 100개 생성
-3. thread당 재고 1개씩 차감 실행
-4. 재고 0개 확인
+```shell
+- 개발 효율성 향상
+(annotatino을 이용해 분산락 처리를 보다 손쉼게 사용)
+- 비지니스로직과 분산락 처리 로직의 관심사 분리
+(각자의 역할만 담당하여 코드 가독성 증대)
+- 코드 재사용성 향상
+```
 
-db connection pool 주의사항
-트랜잭션 내부에서 새로운 트랜잭션을 여는 경우 cp 가 부족하면 cp dead lock을 유발하는 포인트가 될 수 있음
-이 부분을 어떻게 풀어나가야하는지??
+다음과 같은 이유를 고려해 분산락을 annotation기반으로 작성하는 것으로 선택하였습니다.
 
-- facade pattern
-- 트랜잭션 단위를 작업별로 짧게 가져
+이제 Redisson 기반 분산락을 사용하기 위한 예제 코드를 소개해드리겠습니다.
 
-<hr>
+**application.yml**
 
-#### Reference
+```properties
+spring:
+  redis:
+    host: 127.0.0.1
+    port: 6379
+```
+
+<br>
+
+**DistributeLock.java**
+
+```java
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.util.concurrent.TimeUnit;
+
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface DistributeLock {
+    String key(); // (1)
+
+    TimeUnit timeUnit() default TimeUnit.SECONDS; // (2)
+
+    long waitTime() default 5L; // (3)
+
+    long leaseTime() default 3L; // (4)
+}
+```
+
+`DistributeLock anntation` 입니다. key는 분산락의 락을 설정할 이름입니다.  
+그렇기에 key는 어노테이션의 필수값으로 받고 있습니다.  
+나머지 파라미터에 대해서는 클라이언트가 직접 선언해서 사용할 수 있게끔 작성했습니다.
+
+(1) key: 락의 이름  
+(2) timeUnit: 시간 단위(MILLISECONDS, SECONDS, MINUTE..)  
+(3) waitTime: 락을 획득하기 위한 대기 시간  
+(4) leaseTime: 락을 임대하는 시간
+
+<br>
+
+**RedissonConfig.java**
+
+```java
+import org.redisson.Redisson;
+import org.redisson.api.RedissonClient;
+import org.redisson.config.Config;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class RedissonConfig {
+    @Value("${spring.redis.host}")
+    private String redisHost;
+
+    @Value("${spring.redis.port}")
+    private int redisPort;
+
+    private static final String REDISSON_HOST_PREFIX = "redis://";
+
+    @Bean
+    public RedissonClient redissonClient() {
+        RedissonClient redisson = null;
+        Config config = new Config();
+        config.useSingleServer().setAddress(REDISSON_HOST_PREFIX + redisHost + ":" + redisPort);
+        redisson = Redisson.create(config);
+        return redisson;
+    }
+}
+```
+
+RedissonClient를 사용하기 위해 bean으로 등록합니다.
+
+<br>
+
+#### **reference**
 
 https://hyperconnect.github.io/2019/11/15/redis-distributed-lock-1.html
