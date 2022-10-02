@@ -39,9 +39,10 @@ Redisson은 다음과 같은 장점이 있습니다.
 그렇기에 락을 subscribe하는 클라이언트들은 더 이상 락을 획득해도 되냐고 redis로 요청을 보내지 않습니다.
 ```
 
+<br>
 <hr>
 
-### **Redisson 분산락 사용방법**
+### **Redisson 라이브러리**
 
 Spring에서 Redisson을 사용하기 위해선 아래의 의존성이 필요합니다.  
 그리고 Redisson에서 제공하는 인터페이스와 사용법을 간략하게 소개하겠습니다.
@@ -63,9 +64,9 @@ Redisson에서는 Lock을 사용하기 위해 `RLock` 이라는 인터페이스�
 boolean tryLock(long waitTime, long leaseTime, TimeUnit unit) throws InterruptedException;
 ```
 
-- waitTime: 락을 획득하기 위한 대기 시간
-- leaseTime: 락을 임대하는 시간
-- unit: 시간 단위
+- **waitTime:** 락을 획득하기 위한 대기 시간
+- **leaseTime:** 락을 임대하는 시간
+- **unit:** 시간 단위
 
 <br>
 
@@ -94,11 +95,10 @@ try {
 (4) - finally에서 Lock을 해제한다
 ```
 
+<br>
 <hr>
 
 ## **Redisson 분산락 annotation 기반으로 사용하기**
-
-<hr>
 
 Stock 재고차감
 시나리오1
