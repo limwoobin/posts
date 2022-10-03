@@ -1,8 +1,8 @@
 [**예제 및 테스트 코드는 github 에서 확인 가능합니다.**](https://github.com/limwoobin/blog-code-example/tree/master/lock-example)
 
-# **Redisson 라이브러리를 이용한 Distribute Lock 동시성 처리**
+# **Redisson 라이브러리를 이용한 Distribute Lock 동시성 처리(1)**
 
-Redis를 통한 분산락을 이용해 동시성을 해결하는 방법에 대해 알아보고 예제코드를 함께 공유드리려 합니다.
+Redis를 통한 분산락을 이용해 동시성을 해결하는 방법에 대해 알아보고 이를 적용한 방법에 대해 예제코드를 함께 공유드리려 합니다.
 
 <br>
 
