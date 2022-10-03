@@ -261,7 +261,87 @@ public class DistributeLockAop {
 락을 획득/해제는 트랜잭션의 단위보다 크게 이루어져야 합니다.  
 즉, 동시성 처리를 하기 위해서는 락을 획득 이후 트랜잭션이 시작되어야 하고 트랜잭션이 커밋되고 난 이후 락이 해제되어야 합니다.
 
-다음 예제를 보겠습니다.
+<br>
+
+**다음 예제를 보겠습니다.**
+
+![redisson-example-image1](https://user-images.githubusercontent.com/28802545/193533591-e5367c6e-7def-44b2-bb0a-4bfa20318961.png)
+
+사용자1, 2가 동시에 재고가100인 상품을 차감하려고 시도합니다.  
+사용자1은 트랜잭션이 커밋되기전 Lock을 해제합니다. 사용자2는 해당 로직에 접근하여 커밋되기전의 재고수량인 100을 읽게 됩니다.  
+사용자1, 사용자2가 서로 한번씩 재고차감을 시도했지만 재고는 정상적으로 2개가 차감되지 않고 1개만 차감된 상태로 저장됩니다.
+
+그럼 Lock의 해제를 트랜잭션 커밋 이후로 변경해서 보겠습니다.
+
+![redisson-example-image2](https://user-images.githubusercontent.com/28802545/193536783-dc94ab98-b82b-4f84-b6ef-128265bdd31f.png)
+
+사용자1이 재고차감을 완료한 이후 Lock을 해제했음으로 사용자2는 재고 차감시 커밋된 수량 99를 읽고 재고차감을 시도합니다.  
+그렇게되면 재고는 정상적으로 차감되게 됩니다.
+
+<br>
+
+**AopForTransaction.java**
+
+```java
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+@Component
+public class AopForTransaction {
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public Object proceed(final ProceedingJoinPoint joinPoint) throws Throwable {
+        return joinPoint.proceed();
+    }
+}
+```
+
+`@Transactional`은 프록시 기반으로 동작하기에 Aop내에서 트랜잭션을 별도로 가져가기 위해 클래스를 분리했습니다.  
+이 클래스는 `@DistributeLock`가 선언된 메소드의 로직을 수행합니다.  
+부모트랜잭션의 유무와 관계없이 동시성에 대한 처리는 별도의 트랜잭션으로 동작해야 하기에 `@Transactional`의 전파옵션은 `propagation = Propagation.REQUIRES_NEW`로 선언했습니다.
+
+하지만 부모트랜잭션 내에서 `@Transactional(propagation = Propagation.REQUIRES_NEW)`을 이용해 전파옵션을 따로 가져가는것을 추천드리지는 않습니다.  
+모든 가용할 수 있는 `connection pool`이 해당 로직으로 접근하게 된다면 `connection pool dead lock`이 발생할 여지가 있습니다.  
+새로운 트랜잭션을 얻어 이후 로직을 수행하기 때문에 가용 가능한 `connection pool` 이 없다면 모든 `connection pool`이 반한될 `connection pool`을 기다리게 되어 `connection pool dead lock` 이 발생할 수 있습니다.  
+그렇기에 facade와 같이 객체를 감싸 트랜잭션을 짧은 단위로 가져가는 방법이 좋습니다.
+
+<br>
+
+**CustomSpringELParser.java**
+
+```java
+import org.springframework.expression.ExpressionParser;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
+
+public class CustomSpringELParser {
+    public static Object getDynamicValue(String[] parameterNames, Object[] args, String key) {
+        ExpressionParser parser = new SpelExpressionParser();
+        StandardEvaluationContext context = new StandardEvaluationContext();
+
+        for (int i = 0; i < parameterNames.length; i++) {
+            context.setVariable(parameterNames[i], args[i]);
+        }
+
+        return parser.parseExpression(key).getValue(context, Object.class);
+    }
+}
+```
+
+`@DistributeLock` 사용시 key를 SpringExpression으로 전달하고 이를 파싱하는 util클래스입니다.
+
+```java
+@DistributeLock(key = "#key")
+public void doAnything(final String key) {
+	// ...
+}
+```
+
+Aop클래스인 `DistributeLockAop.java`에서 해당 key를 전달받아 사용할 수 있습니다.
+
+<br>
 
 #### **reference**
 
