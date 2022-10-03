@@ -304,8 +304,9 @@ public class AopForTransaction {
 
 하지만 부모트랜잭션 내에서 `@Transactional(propagation = Propagation.REQUIRES_NEW)`을 이용해 전파옵션을 따로 가져가는것을 추천드리지는 않습니다.  
 모든 가용할 수 있는 `connection pool`이 해당 로직으로 접근하게 된다면 `connection pool dead lock`이 발생할 여지가 있습니다.  
-새로운 트랜잭션을 얻어 이후 로직을 수행하기 때문에 가용 가능한 `connection pool` 이 없다면 모든 `connection pool`이 반한될 `connection pool`을 기다리게 되어 `connection pool dead lock` 이 발생할 수 있습니다.  
-그렇기에 facade와 같이 객체를 감싸 트랜잭션을 짧은 단위로 가져가는 방법이 좋습니다.
+새로운 트랜잭션을 얻어 이후 로직을 수행하기 때문에 가용 가능한 `connection pool` 이 없다면 모든 스레드들은 반한될 `connection pool`을 기다리게 됩니다.  
+하지만 모든 스레드들이 새로운 트랜잭션을 얻으려 대기하기 때문에 반환될 트랜잭션이 없어 `connection pool dead lock` 이 발생하게 됩니다.  
+그렇기에 facade와 같이 객체를 감싸 트랜잭션을 짧은 단위로 가져가거나 트래픽을 예측하여 알맞는 connection pool size를 설정하는것이 필요합니다.
 
 <br>
 
