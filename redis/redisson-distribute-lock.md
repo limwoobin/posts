@@ -126,39 +126,6 @@ spring:
 
 <br>
 
-**DistributeLock.java**
-
-```java
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-import java.util.concurrent.TimeUnit;
-
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface DistributeLock {
-    String key(); // (1)
-
-    TimeUnit timeUnit() default TimeUnit.SECONDS; // (2)
-
-    long waitTime() default 5L; // (3)
-
-    long leaseTime() default 3L; // (4)
-}
-```
-
-`DistributeLock anntation` 입니다. key는 분산락의 락을 설정할 이름입니다.  
-그렇기에 key는 어노테이션의 필수값으로 받고 있습니다.  
-나머지 파라미터에 대해서는 클라이언트가 직접 선언해서 사용할 수 있게끔 작성했습니다.
-
-(1) key: 락의 이름  
-(2) timeUnit: 시간 단위(MILLISECONDS, SECONDS, MINUTE..)  
-(3) waitTime: 락을 획득하기 위한 대기 시간  
-(4) leaseTime: 락을 임대하는 시간
-
-<br>
-
 **RedissonConfig.java**
 
 ```java
@@ -193,6 +160,108 @@ public class RedissonConfig {
 RedissonClient를 사용하기 위해 bean으로 등록합니다.
 
 <br>
+
+**DistributeLock.java**
+
+```java
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.util.concurrent.TimeUnit;
+
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface DistributeLock {
+    String key(); // (1)
+
+    TimeUnit timeUnit() default TimeUnit.SECONDS; // (2)
+
+    long waitTime() default 5L; // (3)
+
+    long leaseTime() default 3L; // (4)
+}
+```
+
+`DistributeLock anntation` 입니다. key는 분산락의 락을 설정할 이름입니다.  
+그렇기에 key는 어노테이션의 필수값으로 받고 있습니다.  
+나머지 파라미터에 대해서는 클라이언트가 직접 선언해서 사용할 수 있게끔 작성했습니다.
+
+(1) key: 락의 이름  
+(2) timeUnit: 시간 단위(MILLISECONDS, SECONDS, MINUTE..)  
+(3) waitTime: 락을 획득하기 위한 대기 시간  
+(4) leaseTime: 락을 임대하는 시간
+
+<br>
+
+**DistributeLockAop.java**
+
+```java
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.reflect.MethodSignature;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
+import org.springframework.stereotype.Component;
+
+import java.lang.reflect.Method;
+
+@Aspect
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class DistributeLockAop {
+    private static final String REDISSON_KEY_PREFIX = "RLOCK_";
+
+    private final RedissonClient redissonClient;
+    private final AopForTransaction aopForTransaction;
+
+
+    @Around("@annotation(com.example.lockexample.redisson.aop.DistributeLock)")
+    public Object lock(final ProceedingJoinPoint joinPoint) throws Throwable {
+        MethodSignature signature = (MethodSignature) joinPoint.getSignature();
+        Method method = signature.getMethod();
+        DistributeLock distributeLock = method.getAnnotation(DistributeLock.class);	 // (1)
+
+        String key = REDISSON_KEY_PREFIX + CustomSpringELParser.getDynamicValue(signature.getParameterNames(), joinPoint.getArgs(), distributeLock.key());	// (2)
+
+        RLock rLock = redissonClient.getLock(key);	// (3)
+
+        try {
+            boolean available = rLock.tryLock(distributeLock.waitTime(), distributeLock.leaseTime(), distributeLock.timeUnit());	// (4)
+            if (!available) {
+                return false;
+            }
+
+            log.info("get lock success {}" , key);
+            return aopForTransaction.proceed(joinPoint);	// (5)
+        } catch (Exception e) {
+            Thread.currentThread().interrupt();
+            throw new InterruptedException();
+        } finally {
+            rLock.unlock();	// (6)
+        }
+    }
+}
+```
+
+`@DistributeLock`을 선언한 메소드를 호출했을때 실행되는 aop 클래스입니다.
+
+(1) : `@DistributeLock`에 선언된 값을 aop로 가져옴  
+(2) : `@DistributeLock`에 전달한 key를 가져오기 위해 `SpringEL` 표현식을 파싱  
+(3) : Redisson에 해당 락의 RLock 인터페이스를 가져옴  
+(4) : `tryLock method`를 이용해 Lock 획득을 시도 (획득 실패시 Lock이 해제 될 때까지 subscribe)  
+(5) : `@DistributeLock`이 선언된 메소드의 로직 수행(별도 트랜잭션으로 분리)  
+(6) : 종료 혹은 예외 발생시 finally에서 Lock을 해제함
+
+여기서 주의깊게 볼 부분은 **(5)** 의 `aopForTransaction.proceed(joinPoint);` 입니다.  
+락을 획득/해제는 트랜잭션의 단위보다 크게 이루어져야 합니다.  
+즉, 동시성 처리를 하기 위해서는 락을 획득 이후 트랜잭션이 시작되어야 하고 트랜잭션이 커밋되고 난 이후 락이 해제되어야 합니다.
+
+다음 예제를 보겠습니다.
 
 #### **reference**
 
