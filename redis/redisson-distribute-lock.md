@@ -2,7 +2,7 @@
 
 <br>
 
-# **Redisson 라이브러리를 이용한 Distribute Lock 동시성 처리(1)**
+# **[Spring] Redisson 라이브러리를 이용한 Distribute Lock 동시성 처리(1)**
 
 Redis를 통한 분산락을 이용해 동시성을 해결하는 방법에 대해 알아보고 이를 적용한 방법에 대해 예제코드를 함께 공유드리려 합니다.
 
