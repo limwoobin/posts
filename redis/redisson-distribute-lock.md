@@ -1,5 +1,7 @@
 [**예제 및 테스트 코드는 github 에서 확인 가능합니다.**](https://github.com/limwoobin/blog-code-example/tree/master/lock-example)
 
+<br>
+
 # **Redisson 라이브러리를 이용한 Distribute Lock 동시성 처리(1)**
 
 Redis를 통한 분산락을 이용해 동시성을 해결하는 방법에 대해 알아보고 이를 적용한 방법에 대해 예제코드를 함께 공유드리려 합니다.
@@ -28,7 +30,7 @@ Spring에서 제공하는 대표적인 redis 라이브러리로는 Lettuce가 �
 락을 획득하지 못한 경우 Redis에게 락을 획득하기 위해 계속 요청을 보내게 됨
 ```
 
-Redisson은 다음과 같은 장점이 있습니다.
+Redisson은 Lettuce에 비해 다음과 같은 장점이 있습니다.
 
 ```shell
 1. Lock에 타임아웃을 지정할 수 있음
@@ -39,15 +41,15 @@ Redisson은 다음과 같은 장점이 있습니다.
 그렇기에 락을 subscribe하는 클라이언트들은 더 이상 락을 획득해도 되냐고 redis로 요청을 보내지 않습니다.
 ```
 
-<br>
 <hr>
 
 ### **Redisson 라이브러리**
 
+
 Spring에서 Redisson을 사용하기 위해선 아래의 의존성이 필요합니다.  
 그리고 Redisson에서 제공하는 인터페이스와 사용법을 간략하게 소개하겠습니다.
 
-build.gradle
+__build.gradle__
 
 ```java
 dependencies {
@@ -89,13 +91,12 @@ try {
 ```
 
 ```Shell
-(1) - key 이름에 해당하는 RLock 인스턴스를 가져온다
-(2) - Lock 획득을 시도한다 (성공: true / 실패: false)
-(3) - 획득 실패시 Lock을 subscribe 하며 해제되길 기다린다
-(4) - finally에서 Lock을 해제한다
+(1): key 이름에 해당하는 RLock 인스턴스를 가져온다
+(2): Lock 획득을 시도한다 (성공: true / 실패: false)
+(3): 획득 실패시 Lock을 subscribe 하며 해제되길 기다린다
+(4): finally에서 Lock을 해제한다
 ```
 
-<br>
 <hr>
 
 ## **Redisson 분산락 annotation 기반으로 사용하기**
@@ -111,8 +112,7 @@ annotation기반으로 분산락을 사용하려는 이유는 다음과 같습�
 - 코드 재사용성 향상
 ```
 
-다음과 같은 이유를 고려해 분산락을 annotation기반으로 작성하는 것으로 선택하였습니다.
-
+다음과 같은 이유를 고려해 분산락을 annotation기반으로 작성하는 것으로 선택하였습니다.  
 이제 Redisson 기반 분산락을 사용하기 위한 예제 코드를 소개해드리겠습니다.
 
 **application.yml**
@@ -250,7 +250,7 @@ public class DistributeLockAop {
 
 `@DistributeLock`을 선언한 메소드를 호출했을때 실행되는 aop 클래스입니다.
 
-(1) : `@DistributeLock`에 선언된 값을 aop로 가져옴  
+(1) : `@DistributeLock annotation`을 가져옴  
 (2) : `@DistributeLock`에 전달한 key를 가져오기 위해 `SpringEL` 표현식을 파싱  
 (3) : Redisson에 해당 락의 RLock 인터페이스를 가져옴  
 (4) : `tryLock method`를 이용해 Lock 획득을 시도 (획득 실패시 Lock이 해제 될 때까지 subscribe)  
@@ -305,8 +305,8 @@ public class AopForTransaction {
 하지만 부모트랜잭션 내에서 `@Transactional(propagation = Propagation.REQUIRES_NEW)`을 이용해 전파옵션을 따로 가져가는것을 추천드리지는 않습니다.  
 모든 가용할 수 있는 `connection pool`이 해당 로직으로 접근하게 된다면 `connection pool dead lock`이 발생할 여지가 있습니다.  
 새로운 트랜잭션을 얻어 이후 로직을 수행하기 때문에 가용 가능한 `connection pool` 이 없다면 모든 스레드들은 반한될 `connection pool`을 기다리게 됩니다.  
-하지만 모든 스레드들이 새로운 트랜잭션을 얻으려 대기하기 때문에 반환될 트랜잭션이 없어 `connection pool dead lock` 이 발생하게 됩니다.  
-그렇기에 facade와 같이 객체를 감싸 트랜잭션을 짧은 단위로 가져가거나 트래픽을 예측하여 알맞는 connection pool size를 설정하는것이 필요합니다.
+스레드들이 새로운 트랜잭션을 얻으려 대기하기 때문에 반환가능한 트랜잭션이 없어 `connection pool dead lock` 이 발생하게 됩니다.  
+그렇기에 facade와 같이 객체를 감싸 트랜잭션을 짧은 단위로 가져가거나 해당 서비스의 트래픽에 알맞는 `connection pool size`를 설정하는것이 필요합니다.
 
 <br>
 
@@ -340,7 +340,11 @@ public void doAnything(final String key) {
 }
 ```
 
-Aop클래스인 `DistributeLockAop.java`에서 해당 key를 전달받아 사용할 수 있습니다.
+Aop클래스인 `DistributeLockAop.java`에서 해당 key를 전달받아 사용할 수 있습니다.  
+다음 글에서는 Redisson 분산락을 이용해 실제 서비스에서 겪을 수 있는 동시성 문제에 대해 해결하고 테스트 코드로 검증하는 과정을 공유해드리겠습니다.  
+
+감사합니다.
+
 
 <br>
 
