@@ -344,6 +344,7 @@ Aop클래스인 `DistributeLockAop.java`에서 해당 key를 전달받아 사용
 
 <br>
 
-#### **reference**
+## **Reference**
 
 https://hyperconnect.github.io/2019/11/15/redis-distributed-lock-1.html
+https://github.com/redisson/redisson
