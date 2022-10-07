@@ -2,7 +2,7 @@
 
 <br>
 
-# **[Spring] Redisson 라이브러리를 이용한 Distribute Lock 동시성 처리(1)**
+# **Redisson 라이브러리를 이용한 Distribute Lock 동시성 처리(1)**
 
 Redis를 통한 분산락을 이용해 동시성을 해결하는 방법에 대해 알아보고 이를 적용한 방법에 대해 예제코드를 함께 공유드리려 합니다.
 
@@ -45,11 +45,10 @@ Redisson은 Lettuce에 비해 다음과 같은 장점이 있습니다.
 
 ### **Redisson 라이브러리**
 
-
 Spring에서 Redisson을 사용하기 위해선 아래의 의존성이 필요합니다.  
 그리고 Redisson에서 제공하는 인터페이스와 사용법을 간략하게 소개하겠습니다.
 
-__build.gradle__
+**build.gradle**
 
 ```java
 dependencies {
@@ -341,10 +340,9 @@ public void doAnything(final String key) {
 ```
 
 Aop클래스인 `DistributeLockAop.java`에서 해당 key를 전달받아 사용할 수 있습니다.  
-다음 글에서는 Redisson 분산락을 이용해 실제 서비스에서 겪을 수 있는 동시성 문제에 대해 해결하고 테스트 코드로 검증하는 과정을 공유해드리겠습니다.  
+다음 글에서는 Redisson 분산락을 이용해 실제 서비스에서 겪을 수 있는 동시성 문제에 대해 해결하고 테스트 코드로 검증하는 과정을 공유해드리겠습니다.
 
 감사합니다.
-
 
 <br>
 
