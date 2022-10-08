@@ -229,6 +229,79 @@ Lock없이 동시성 로직을 수행하니 사용자 100명이 쿠폰을 요청
 
 <br>
 
+## **Case2 - 쿠폰 등록 서비스**
+
+쿠폰 등록시 DB에는 같은 이름의 쿠폰을 등록할 수 없다는 제약이 있다고 가정하겠습니다.  
+(일반적으론 DB의 Unique index를 이용할 수도 있지만 예제인 만큼 가볍게 봐주시면 감사하겠습니다.)  
+해당 기능은 동시에 같은 이름의 쿠폰등록요청이 여러건 와도 단 한개만 등록되어야 합니다.  
+예제코드를 작성해보겠습니다.
+
+<br>
+
+**CouponService.java**
+
+```java
+import com.example.lockexample.redisson.dto.CouponRequest;
+import com.example.lockexample.redisson.dto.CouponResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+public class CouponService {
+    private final CouponRegisterService couponRegisterService;
+
+    private static final String COUPON_KEY_PREFIX = "COUPON_";
+
+    public CouponResponse registerCoupon(CouponRequest couponRequest) {
+        String key = COUPON_KEY_PREFIX + couponRequest.getName();
+        return couponRegisterService.register(key, couponRequest);
+    }
+}
+```
+
+<br>
+
+CouponRegisterService.java
+
+```java
+import com.example.lockexample.redisson.aop.DistributeLock;
+import com.example.lockexample.redisson.domain.Coupon;
+import com.example.lockexample.redisson.domain.CouponRepository;
+import com.example.lockexample.redisson.dto.CouponRequest;
+import com.example.lockexample.redisson.dto.CouponResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+@Component
+@RequiredArgsConstructor
+public class CouponRegisterService {
+
+    private final CouponRepository couponRepository;
+
+    @DistributeLock(key = "#key")
+    public CouponResponse register(final String key, CouponRequest request) {
+        validateAlreadyExist(request);
+
+        Coupon coupon = request.toCoupon();
+        couponRepository.save(coupon);
+        return CouponResponse.toResponse(coupon);
+    }
+
+    private void validateAlreadyExist(CouponRequest request) {
+        couponRepository.findByName(request.getName()).ifPresent(x -> {
+            throw new IllegalArgumentException();
+        });
+    }
+}
+```
+
+쿠폰 등록시 해당 이름의 쿠폰이 이미 등록되어있는지 유효성 검사를 진행합니다.  
+그리고 쿠포등록시에는 쿠폰 이름, 쿠폰Prefix로 이루어진 이름을 key로 Lock을 잡아  
+같은 이름의 쿠폰을 등록하려는 경우 해당 Lock을 사용해 하나의 요청만 접근하게 하여 동시성을 처리하고 있습니다.
+
+<br>
+
 ## **Reference**
 
 https://www.inflearn.com/course/%EB%8F%99%EC%8B%9C%EC%84%B1%EC%9D%B4%EC%8A%88-%EC%9E%AC%EA%B3%A0%EC%8B%9C%EC%8A%A4%ED%85%9C
