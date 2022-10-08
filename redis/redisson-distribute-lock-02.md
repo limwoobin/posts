@@ -4,7 +4,8 @@
 
 # **Redisson 라이브러리를 이용한 Distribute Lock 동시성 처리 (2)**
 
-이번엔 앞에서 만들어놓은 `@DistributeLock` 어노테이션을 이용해 동시성을 처리하는 예제코드, 테스트 코드를 작성해보겠습니다.
+이번엔 앞에서 만들어놓은 `@DistributeLock` 어노테이션을 이용해 동시성을 처리하는 예제코드, 테스트 코드를 작성해보겠습니다.  
+동시성에 대한 테스트 코드는 멀티스레드를 이용해 작성 하겠습니다.
 
 <br>
 
@@ -137,7 +138,7 @@ https://devoong2.tistory.com/entry/Springboot-Redis-%ED%85%8C%EC%8A%A4%ED%8A%B8-
 
 <br>
 
-**RedissonLockTest.java**
+**CouponDecreaseLockTest.java**
 
 ```java
 import com.example.lockexample.redisson.application.CouponService;
@@ -154,9 +155,9 @@ import java.util.concurrent.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("Redisson Lock 테스트")
+@DisplayName("Redisson Lock 쿠폰 차감 테스트")
 @SpringBootTest
-class RedissonLockTest {
+class CouponDecreaseLockTest {
 
     @Autowired
     private CouponService couponService;
@@ -206,14 +207,18 @@ class RedissonLockTest {
 해당 테스트 코드에 대한 시나리오는 다음과 같습니다.
 
 ```shell
-1. 쿠폰 100개가 준비되어있음
-2. 사용자 100명이 동시에 쿠폰을 발급받기 위해 쿠폰 발급을 요청함
-3. 정상적으로 남은 쿠폰 갯수가 0이 되어야 함
+1. 쿠폰 100개가 준비되어있다
+2. 사용자 100명이 동시에 쿠폰을 발급받기 위해 쿠폰 발급을 요청한다
+3. 정상적으로 남은 쿠폰 갯수가 0이 되어야 한다
 ```
 
 다음과 같이 테스트 코드가 정상적으로 통과된 것을 확인할 수 있습니다.
 
 ![redisson-example-image3](https://user-images.githubusercontent.com/28802545/194810213-0bbcacd9-93cc-4769-889b-c94a416f7596.png)
+
+<br>
+
+### **동시성 처리가 없다면?**
 
 그렇다면 반대로 `@DistributeLock`을 지우고 Lock없이 동시성 로직을 수행하면 어떤 결과가 나올지 확인해보겠습니다.
 
@@ -299,6 +304,96 @@ public class CouponRegisterService {
 쿠폰 등록시 해당 이름의 쿠폰이 이미 등록되어있는지 유효성 검사를 진행합니다.  
 그리고 쿠포등록시에는 쿠폰 이름, 쿠폰Prefix로 이루어진 이름을 key로 Lock을 잡아  
 같은 이름의 쿠폰을 등록하려는 경우 해당 Lock을 사용해 하나의 요청만 접근하게 하여 동시성을 처리하고 있습니다.
+
+쿠폰 등록에 대해 테스트 코드를 작성해보겠습니다.
+
+<br>
+
+CouponRegisterLockTest.java
+
+```java
+import com.example.lockexample.redisson.application.CouponService;
+import com.example.lockexample.redisson.domain.CouponRepository;
+import com.example.lockexample.redisson.dto.CouponRequest;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+
+import java.util.concurrent.*;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+@DisplayName("Redisson Lock 쿠폰 등록 테스트")
+@SpringBootTest
+class CouponRegisterLockTest {
+
+    @Autowired
+    private CouponService couponService;
+
+    @Autowired
+    private CouponRepository couponRepository;
+
+    @Test
+    void 같은이름의_쿠폰이_여러개_등록될수_없음() throws InterruptedException {
+        CouponRequest couponRequest = new CouponRequest("NEW001", 10L);
+
+        int numberOfThreads = 100;
+        ExecutorService executorService = Executors.newFixedThreadPool(32);
+        CountDownLatch latch = new CountDownLatch(numberOfThreads);
+
+        for (int i=0; i<numberOfThreads; i++) {
+            executorService.submit(() -> {
+                try {
+                    couponService.registerCoupon(couponRequest);
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+
+        Long totalCount = couponRepository.countByName("NEW001");
+        assertThat(totalCount).isOne();
+    }
+}
+```
+
+해당 테스트 코드에 대한 시나리오는 다음과 같습니다.
+
+```shell
+1. "NEW001" 이라는 이름을 가진 쿠폰을 준비한다
+2. 사용자 100명이 동시에 "NEW001" 쿠폰을 등록요청한다
+3. 정상적으로 등록된 "NEW001" 쿠폰 갯수는 단 하나이어야 한다
+```
+
+다음과 같이 정상적으로 하나만 등록되어 테스트에 통과되는 것을 확인할 수 있습니다.
+
+![redisson-example-image6](https://user-images.githubusercontent.com/28802545/194820444-afd24d18-bc53-43d3-a888-60eac055b65f.png)
+
+<br>
+
+### **동시성 처리가 없다면?**
+
+반대로 쿠폰 등록시 `@DistributeLock`을 지우고 Lock없이 동시성 로직을 수행하면 어떻게 될지 확인해보겠습니다.
+
+![redisson-example-image8](https://user-images.githubusercontent.com/28802545/194823214-dd48ce30-bf0c-474e-ad6e-c3e0dfee9279.png)
+
+테스트 시나리오는 위와 동일합니다.
+
+![redisson-example-image7](https://user-images.githubusercontent.com/28802545/194822999-a8ec7eca-b063-4ffe-94aa-84ba7f804fb1.png)
+
+같은 이름의 쿠폰이 등록될 수 없도록 유효성 로직이 있음에도 불구하고  
+**`NEW001`** 이라는 이름의 쿠폰이 32개나 등록된 것을 확인할 수 있습니다.  
+(개수는 테스트마다 달라질 수 있습니다.)
+
+<br>
+
+이렇게 쿠폰 차감, 등록과 같이 동시성 처리가 필요한 기능들에 대해  
+`Redisson Distribute Lock`을 이용해 Custom Annotation인 `@DistributeLock`을 만들어 동시성 처리를 해보았습니다.
+
+감사합니다.
 
 <br>
 
