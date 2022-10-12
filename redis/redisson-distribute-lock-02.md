@@ -7,6 +7,9 @@
 이번엔 앞에서 만들어놓은 `@DistributeLock` 어노테이션을 이용해 동시성을 처리하는 예제코드, 테스트 코드를 작성해보겠습니다.  
 동시성에 대한 테스트 코드는 멀티스레드를 이용해 작성 하겠습니다.
 
+앞선 글을 아직 읽지 안았다면 **Redisson 라이브러리를 이용한 Distribute Lock 동시성 처리 (1)** 을 먼저 보고오시는것을 추천드립니다.  
+https://devoong2.tistory.com/entry/Spring-Redisson-%EB%9D%BC%EC%9D%B4%EB%B8%8C%EB%9F%AC%EB%A6%AC%EB%A5%BC-%EC%9D%B4%EC%9A%A9%ED%95%9C-Distribute-Lock-%EB%8F%99%EC%8B%9C%EC%84%B1-%EC%B2%98%EB%A6%AC-1
+
 <br>
 
 ## **Case1 - 쿠폰 차감 서비스**
@@ -302,7 +305,7 @@ public class CouponRegisterService {
 ```
 
 쿠폰 등록시 해당 이름의 쿠폰이 이미 등록되어있는지 유효성 검사를 진행합니다.  
-그리고 쿠포등록시에는 쿠폰 이름, 쿠폰Prefix로 이루어진 이름을 key로 Lock을 잡아  
+그리고 쿠폰 등록시에는 쿠폰 이름, 쿠폰Prefix로 이루어진 이름을 key로 Lock을 잡아  
 같은 이름의 쿠폰을 등록하려는 경우 해당 Lock을 사용해 하나의 요청만 접근하게 하여 동시성을 처리하고 있습니다.
 
 쿠폰 등록에 대해 테스트 코드를 작성해보겠습니다.
