@@ -17,27 +17,12 @@ Redis는 key/value 형태로 저장되는 database이며 다음과 같은 자료
 
 <br>
 
-<!-- - __Strings__ : 텍스트, 직렬화된 객체, 이진 배열을 포함 및 바이트 시퀀스를 저장.
-- __Lists__ : 문자열 값의 연결된 목록, 스택과 큐를 구현
-- __Sets__ : 데이터의 모음, 정렬되지 않고 중복되지 않음
-- __Hashes__ : field/value 형태의 컬렉션으로 구성됨,  
-redis key 하나에 여러개의 field/value 가 저장됨
-- __SortedSets__ : set에 score라는 필드가 추가된 데이터 유형
-- __Streams__ : ㄹ
-- __Geospatial indexes__
-- __Bitmaps__
-- __Bitfields__
-- __HyperLogLog__ -->
-
-
 ## __Strings__
 - 일반적인 문자열 형태이다
-- 카운터 구현, 비트 연산을 수행하는 기능을 지원한다.
+- 카운터 구현(incr, decr), 비트 연산을 수행하는 기능을 지원한다.
 - Redis 문자열의 최대 길이는 512MB이다
 
 <br>
-
-## __Strings의 명렁어__
 
 __SET__ : 값을 저장한다.  
 ex) `SET {key} {value}`
