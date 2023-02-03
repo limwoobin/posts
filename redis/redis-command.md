@@ -189,6 +189,74 @@ ex) `DECRBY {key} {n}`
 
 <br><br>
 
+## __Sets__
+- 중복되지 않는 문자열의 모음(Set 자료구조와 유사)
+- 정렬되지 않음
+- key와 value가 1:N 관계, Sets에서는 집합이라는 의미로 value를 member라고 부름
+- 교집합, 합집합 및 차이와 같은 일반적인 집합 연산을 효율적으로 수행
+- Redis 집합의 최대 크기는 2^32 - 1(4,294,967,295)
+
+<br>
+
+__SADD__ : 집합에 데이터를 추가  
+ex) `SADD {key} {member}`
+
+```shell
+> SADD key1 hello
+(integer) 1
+> SADD key1 hello2 hello3
+(integer) 2
+> SMEMBERS key1 (멤버 조회)
+1) "hello3"
+2) "hello2"
+3) "hello"
+
+------------------------------------
+중복된 값을 저장하는 경우
+> SADD key1 hello
+(integer) 1
+> SADD key1 hello
+(integer) 0
+> SMEMBERS key1
+1) "hello"
+```
+
+__Subquery 사용 가능__
+```shell
+example
+> SADD key1 (get key2)
+> SADD key1 (lrange mylist2 0 -1)
+...
+```
+
+<br>
+
+__SREM__ : 집합의 멤버를 삭제  
+ex) `SREM {key} {member} [member ...]`
+
+```shell
+> SADD key1 hello hello2 hello3
+(integer) 3
+> SREM key1 hello
+(integer) 1
+> SMEMBERS key1
+1) "hello3"
+2) "hello2"
+
+> SREM key1 hello2 hello3
+(integer) 2
+> SMEMBERS key1
+(empty array)
+```
+
+<br>
+
+__SMEMBERS__ : 집합의 모든 데이터를 조회  
+ex) `SMEMBERS {key}`
+
+
+<br><br>
+
 ## __Redis 접속__
 
 Redis는 다음과 같은 명령어를 통해 cli에 접속할 수 있습니다.
