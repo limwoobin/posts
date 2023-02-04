@@ -25,10 +25,10 @@ Redis는 key/value 형태로 저장되는 database이며 다음과 같은 자료
 <br>
 
 __SET__ : 값을 저장한다.  
-ex) `SET {key} {value}`
+SYNTAX - `SET {key} {value}`
 
 __GET__ : 값을 조회한다.  
-ex) `GET {key}`
+SYNTAX - `GET {key}`
 
 ```shell
 > SET user devoong2
@@ -40,7 +40,7 @@ OK
 <br>
 
 __DEL__ : 키를 삭제한다  
-ex) `DEL {key}`
+SYNTAX - `DEL {key}`
 
 ```shell
 > DEL user
@@ -52,7 +52,7 @@ ex) `DEL {key}`
 <br>
 
 __SETNX__ : 키가 존재하지 않는 경우에만 저장한다 (SET if Not eXists)  
-ex) `SETNX {key} {value}`
+SYNTAX - `SETNX {key} {value}`
 
 ```shell
 > SETNX user devoong2
@@ -68,7 +68,7 @@ false
 <br>
 
 __SETEX__ : 지정한 시간이 지나면 삭제되는 키를 저장 (시간 단위는 s)  
-ex) `SETEX {key} {value} {s}`
+SYNTAX - `SETEX {key} {value} {s}`
 
 ```shell
 > SETEX user devoong2 30
@@ -82,7 +82,7 @@ OK
 <br>
 
 __MSET__ : 여러개의 데이터를 한번에 저장  
-ex) `MSET {key1} {value1} {key2} {value2} ...`
+SYNTAX - `MSET {key1} {value1} {key2} {value2} ...`
 
 ```shell
 > MSET key1 Hello key2 Hello2
@@ -94,7 +94,7 @@ OK
 ```
 
 __MGET__ : 여러개의 데이터를 한번에 조회  
-ex) `MGET {key1} {key2}`
+SYNTAX - `MGET {key1} {key2}`
 
 ```shell
 > MGET key1 key2
@@ -105,7 +105,7 @@ ex) `MGET {key1} {key2}`
 <br>
 
 __INCR__ : 숫자를 1씩 증가, redis에 값이 없을시에는 0부터 증가  
-ex) `incr {key}`
+SYNTAX - `incr {key}`
 
 ```shell
 > INCR key1
@@ -131,7 +131,7 @@ OK
 <br>
 
 __INCRBY__ : 지정한 숫자(정수)만큼 증가, redis에 값이 없을경우 0을 기준으로 증가  
-ex) `INCRBY {key1} {n}`
+SYNTAX - `INCRBY {key1} {n}`
 
 ```shell
 > INCRBY key1 5
@@ -153,7 +153,7 @@ ex) `INCRBY {key1} {n}`
 <br>
 
 __DECR__ : 숫자를 1씩 감소, redis에 값이 없을경우 0부터 감소  
-ex) `DECR {key}`
+SYNTAX - `DECR {key}`
 
 ```shell
 > DECR key1
@@ -176,7 +176,7 @@ OK
 <br>
 
 __DECRBY__ : 지정한 숫자(정수)만큼 감소, redis에 값이 없을경우 0을 기준으로 감소  
-ex) `DECRBY {key} {n}`
+SYNTAX - `DECRBY {key} {n}`
 
 ```shell
 > DECRBY key1 5
@@ -199,7 +199,7 @@ ex) `DECRBY {key} {n}`
 <br>
 
 __SADD__ : 집합에 데이터를 추가  
-ex) `SADD {key} {member}`
+SYNTAX - `SADD {key} {member}`
 
 ```shell
 > SADD key1 hello
@@ -232,7 +232,7 @@ example
 <br>
 
 __SREM__ : 집합의 멤버를 삭제  
-ex) `SREM {key} {member} [member ...]`
+SYNTAX - `SREM {key} {member} [{member} ...]`
 
 ```shell
 > SADD key1 hello hello2 hello3
@@ -252,8 +252,49 @@ ex) `SREM {key} {member} [member ...]`
 <br>
 
 __SMEMBERS__ : 집합의 모든 데이터를 조회  
-ex) `SMEMBERS {key}`
+SYNTAX - `SMEMBERS {key}`
 
+```shell
+> SADD key1 hello hello2 hello3
+(integer) 3
+> SMEMBERS key1
+1) "hello3"
+2) "hello2"
+3) "hello"
+```
+
+<br>
+
+__SCARD__ : 집합에 속한 member의 개수를 조회(SLEN을 사용해도 동일)  
+SYNTAX - `SCARD {key}`
+
+```shell
+> SADD key1 hello hello2 hello3
+(integer 3)
+> SCARD key1
+(integer 3)
+> SREM key1 hello
+(integer 1)
+> SCARD key1
+(integer 2)
+```
+
+<br>
+
+__SUNION__ : 두 집합의 합집합을 구한다  
+SYNTAX - `SUNION {key} [{key} ...]`
+
+```shell
+> SADD key1 hello hello2
+(integer) 2
+> SADD key2 hello3
+(integer) 1
+
+> SUNION key1 key2
+1) "hello3"
+2) "hello"
+3) "hello2"
+```
 
 <br><br>
 
@@ -261,10 +302,6 @@ ex) `SMEMBERS {key}`
 
 Redis는 다음과 같은 명령어를 통해 cli에 접속할 수 있습니다.
 
+SYNTAX
 > redis-cli -h {host} -p {port}
 
-ex)
-
-```
-redis-cli -h {host} -p {port}
-```
