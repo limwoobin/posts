@@ -24,10 +24,10 @@ Redis는 key/value 형태로 저장되는 database이며 다음과 같은 자료
 
 <br>
 
-__SET__ : 값을 저장한다.  
+### __SET__ : 값을 저장한다.  
 SYNTAX - `SET {key} {value}`
 
-__GET__ : 값을 조회한다.  
+### __GET__ : 값을 조회한다.  
 SYNTAX - `GET {key}`
 
 ```shell
@@ -39,7 +39,7 @@ OK
 
 <br>
 
-__DEL__ : 키를 삭제한다  
+### __DEL__ : 키를 삭제한다  
 SYNTAX - `DEL {key}`
 
 ```shell
@@ -51,7 +51,7 @@ SYNTAX - `DEL {key}`
 
 <br>
 
-__SETNX__ : 키가 존재하지 않는 경우에만 저장한다 (SET if Not eXists)  
+### __SETNX__ : 키가 존재하지 않는 경우에만 저장한다 (SET if Not eXists)  
 SYNTAX - `SETNX {key} {value}`
 
 ```shell
@@ -67,7 +67,7 @@ false
 
 <br>
 
-__SETEX__ : 지정한 시간이 지나면 삭제되는 키를 저장 (시간 단위는 s)  
+### __SETEX__ : 지정한 시간이 지나면 삭제되는 키를 저장 (시간 단위는 s)  
 SYNTAX - `SETEX {key} {value} {s}`
 
 ```shell
@@ -81,7 +81,7 @@ OK
 
 <br>
 
-__MSET__ : 여러개의 데이터를 한번에 저장  
+### __MSET__ : 여러개의 데이터를 한번에 저장  
 SYNTAX - `MSET {key1} {value1} {key2} {value2} ...`
 
 ```shell
@@ -93,7 +93,7 @@ OK
 "Hello2"
 ```
 
-__MGET__ : 여러개의 데이터를 한번에 조회  
+### __MGET__ : 여러개의 데이터를 한번에 조회  
 SYNTAX - `MGET {key1} {key2}`
 
 ```shell
@@ -104,7 +104,7 @@ SYNTAX - `MGET {key1} {key2}`
 
 <br>
 
-__INCR__ : 숫자를 1씩 증가, redis에 값이 없을시에는 0부터 증가  
+### __INCR__ : 숫자를 1씩 증가, redis에 값이 없을시에는 0부터 증가  
 SYNTAX - `incr {key}`
 
 ```shell
@@ -130,7 +130,7 @@ OK
 
 <br>
 
-__INCRBY__ : 지정한 숫자(정수)만큼 증가, redis에 값이 없을경우 0을 기준으로 증가  
+### __INCRBY__ : 지정한 숫자(정수)만큼 증가, redis에 값이 없을경우 0을 기준으로 증가  
 SYNTAX - `INCRBY {key1} {n}`
 
 ```shell
@@ -152,7 +152,7 @@ SYNTAX - `INCRBY {key1} {n}`
 
 <br>
 
-__DECR__ : 숫자를 1씩 감소, redis에 값이 없을경우 0부터 감소  
+### __DECR__ : 숫자를 1씩 감소, redis에 값이 없을경우 0부터 감소  
 SYNTAX - `DECR {key}`
 
 ```shell
@@ -175,7 +175,7 @@ OK
 
 <br>
 
-__DECRBY__ : 지정한 숫자(정수)만큼 감소, redis에 값이 없을경우 0을 기준으로 감소  
+### __DECRBY__ : 지정한 숫자(정수)만큼 감소, redis에 값이 없을경우 0을 기준으로 감소  
 SYNTAX - `DECRBY {key} {n}`
 
 ```shell
@@ -198,7 +198,7 @@ SYNTAX - `DECRBY {key} {n}`
 
 <br>
 
-__SADD__ : 집합에 데이터를 추가  
+### __SADD__ : 집합에 데이터를 추가  
 SYNTAX - `SADD {key} {member}`
 
 ```shell
@@ -231,7 +231,7 @@ example
 
 <br>
 
-__SREM__ : 집합의 멤버를 삭제  
+### __SREM__ : 집합의 멤버를 삭제  
 SYNTAX - `SREM {key} {member} [{member} ...]`
 
 ```shell
@@ -251,7 +251,7 @@ SYNTAX - `SREM {key} {member} [{member} ...]`
 
 <br>
 
-__SMEMBERS__ : 집합의 모든 데이터를 조회  
+### __SMEMBERS__ : 집합의 모든 데이터를 조회  
 SYNTAX - `SMEMBERS {key}`
 
 ```shell
@@ -265,7 +265,7 @@ SYNTAX - `SMEMBERS {key}`
 
 <br>
 
-__SCARD__ : 집합에 속한 member의 개수를 조회(SLEN을 사용해도 동일)  
+### __SCARD__ : 집합에 속한 member의 개수를 조회(SLEN을 사용해도 동일)  
 SYNTAX - `SCARD {key}`
 
 ```shell
@@ -281,7 +281,7 @@ SYNTAX - `SCARD {key}`
 
 <br>
 
-__SUNION__ : 두 집합의 합집합을 구한다  
+### __SUNION__ : 집합들의 합집합을 구한다  
 SYNTAX - `SUNION {key} [{key} ...]`
 
 ```shell
@@ -290,10 +290,46 @@ SYNTAX - `SUNION {key} [{key} ...]`
 > SADD key2 hello3
 (integer) 1
 
+// key1 = {hello, hello2}
+// key2 = {hello3}
+
 > SUNION key1 key2
 1) "hello3"
 2) "hello"
 3) "hello2"
+```
+
+<br>
+
+### __SINTER__ : 집합들의 교집합을 구한다
+SYNTAX - `SINTER {key} [{key} ...]`
+
+```shell
+교집합이 있는 경우
+> SADD key1 hello hello2
+(integer) 2
+> SADD key2 hello
+(integer) 1
+
+// key1 = {hello, hello2}
+// key2 = {hello}
+
+> SINTER key1 key2
+1) "hello"
+
+-------------------------------------------
+
+교집합이 는 경우
+> SADD key1 hello hello2
+(integer) 2
+> SADD key2 hello3
+(integer) 1
+
+// key1 = {hello, hello2}
+// key2 = {hello3}
+
+> SINTER key1 key2
+(empty array)
 ```
 
 <br><br>
