@@ -319,7 +319,7 @@ SYNTAX - `SINTER {key} [{key} ...]`
 
 -------------------------------------------
 
-교집합이 는 경우
+교집합이 없는 경우
 > SADD key1 hello hello2
 (integer) 2
 > SADD key2 hello3
@@ -330,6 +330,41 @@ SYNTAX - `SINTER {key} [{key} ...]`
 
 > SINTER key1 key2
 (empty array)
+```
+
+<br>
+
+### __SDIFF__ : 집합들의 차집합을 구한다
+SYNTAX - `SDIFF {key} [{key} ...]`
+
+```shell
+> SADD key1 A B C
+(integer) 3
+> SADD key2 C D
+(integer) 2
+
+// key1 = {A, B, C}
+// key2 = {C, D}
+
+> SDIFF key1 key2
+1) "A"
+2) "B"
+```
+
+<br>
+
+### __SISMEMBER__ : 집합에 member가 존재하는지 확인
+SINTAX - `SISMEMBER {key} {member}`  
+member가 있으면 1 없으면 0을 리턴
+
+```shell
+> SADD key1 A B C
+(integer) 3
+
+> SISMEMBER key1 A
+(integer) 1
+> SISMEMBER key1 D
+(integer) 0
 ```
 
 <br><br>
