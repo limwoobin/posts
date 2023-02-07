@@ -299,6 +299,11 @@ SYNTAX - `SUNION {key} [{key} ...]`
 3) "hello2"
 ```
 
+### __SUNIONSTORE__ : 합집합을 구해 새로운 키에 저장
+SINTAX - `SUNIONSTORE {destination_key} {source_key} [{source_key} ...]`
+
+source_key의 합의 결과가 destination_key에 저장된다
+
 <br>
 
 ### __SINTER__ : 집합들의 교집합을 구한다
@@ -332,6 +337,11 @@ SYNTAX - `SINTER {key} [{key} ...]`
 (empty array)
 ```
 
+### __SINTERSTORE__ : 교집합을 구해 새로운 키에 저장
+SINTAX - `SINTERSTORE {destination_key} {source_key} [{source_key} ...]`
+
+source_key의 교집합의 결과가 destination_key에 저장된다
+
 <br>
 
 ### __SDIFF__ : 집합들의 차집합을 구한다
@@ -350,6 +360,11 @@ SYNTAX - `SDIFF {key} [{key} ...]`
 1) "A"
 2) "B"
 ```
+
+### __SDIFFSTORE__ : 차집합을 구해 새로운 키에 저장
+SINTAX - `SDIFFSTORE {destination_key} {source_key} [{source_key} ...]`
+
+source_key의 차집합의 결과가 destination_key에 저장된다
 
 <br>
 
