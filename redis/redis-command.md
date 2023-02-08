@@ -384,6 +384,41 @@ member가 있으면 1 없으면 0을 리턴
 
 <br><br>
 
+# __Hashes__
+- field-value 구조로 구성된 컬렉션 (java의 hashtable과 유사함)
+- key하위에 subkey를 이용해 Hash Table을 제공
+- 대부분의 해시 명령의 복잡도는 O(1), HKEYS, KVALS, HGETALL는 O(n)이며 여기서 n은 레코드의 개수 
+
+redis hashes 는 다음과 같은 형태를 가지게 됨  
+![redis-image](https://user-images.githubusercontent.com/28802545/217829213-af3cb736-031f-48bb-8876-329321c88860.png)
+
+<br>
+
+### __HSET__ : key에 filed와 value를 저장
+SYNTAX - `HSET {key} {field} {value} [{field} {value} ...]`
+
+```shell
+> HSET key1 field1 value1
+(integer) 1
+```
+
+<br>
+
+### __HGETALL__ : key의 모든 field와 value를 조회
+SYNTAX - `HGETALL {key}`
+
+```shell
+> HSET person name devoong
+(integer) 1
+> HSET person gender male
+(integer) 1
+> HGETALL person
+1) "name"
+2) "devoong"
+3) "gender"
+4) "male"
+```
+
 ## __Redis 접속__
 
 Redis는 다음과 같은 명령어를 통해 cli에 접속할 수 있습니다.
