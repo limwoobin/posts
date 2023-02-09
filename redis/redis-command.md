@@ -398,7 +398,20 @@ redis hashes 는 다음과 같은 형태를 가지게 됨
 SYNTAX - `HSET {key} {field} {value} [{field} {value} ...]`
 
 ```shell
-> HSET key1 field1 value1
+> HSET person name devoong2
+(integer) 1
+```
+
+<br>
+
+### __HDEL__ : key의 filed로 value를 삭제
+SYNTAX - `HDEL {key} {field} [{field} ...]`
+
+```shell
+> HSET person name devoong2
+(integer) 1
+
+> HDEL person name
 (integer) 1
 ```
 
@@ -408,16 +421,93 @@ SYNTAX - `HSET {key} {field} {value} [{field} {value} ...]`
 SYNTAX - `HGETALL {key}`
 
 ```shell
-> HSET person name devoong
+> HSET person name devoong2
 (integer) 1
 > HSET person gender male
 (integer) 1
+
 > HGETALL person
 1) "name"
 2) "devoong"
 3) "gender"
 4) "male"
 ```
+
+<br>
+
+### __HGET__ : key와 filed로 value를 조회
+SYNTAX - `HGET {key} {field}`
+
+```shell
+> HSET person name devoong2
+(integer) 1
+
+> HGET person name
+"devoong2"
+```
+
+### __HMGET__ : key와 filed로 여러개의 value를 조회
+SYNTAX - `HGET {key} [{key} ...]`
+
+```shell
+> HSET person name devoong2
+(integer) 1
+> HSET person gender male
+(integer) 1
+
+> HMGET person name gender
+1) "devoong"
+2) "male"
+```
+
+<br>
+
+### __HLEN__ : key의 filed 개수를 조회
+SYNTAX - `HLEN {key} {field}`
+
+```shell
+> HSET person name devoong2
+(integer) 1
+> HSET person gender male
+(integer) 1
+
+> HLEN person
+(integer) 2
+```
+
+<br>
+
+### __HKEYS__ : key의 모든 filed를 조회
+SYNTAX - `HKEYS {key}`
+
+```shell
+> HSET person name devoong2
+(integer) 1
+> HSET person gender male
+(integer) 1
+
+> HKEYS person
+1) "name"
+2) "gender"
+```
+
+<br>
+
+### __HVALS__ : key의 모든 value를 조회
+SYNTAX - `HVALS {key}`
+
+```shell
+> HSET person name devoong2
+(integer) 1
+> HSET person gender male
+(integer) 1
+
+> HVALS person
+1) "devoong"
+2) "male"
+```
+
+<br>
 
 ## __Redis 접속__
 
