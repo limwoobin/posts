@@ -491,8 +491,6 @@ SYNTAX - `HKEYS {key}`
 2) "gender"
 ```
 
-<br>
-
 ### __HVALS__ : key의 모든 value를 조회
 SYNTAX - `HVALS {key}`
 
@@ -508,6 +506,45 @@ SYNTAX - `HVALS {key}`
 ```
 
 <br>
+
+### __HINCRBY__ : field의 value를 increment만큼 증가or감소
+SYNTAX - `HINCRBY {key} {field} {increment}`
+
+```shell
+> HINCRBY key count 1
+"1"
+> HINCRBY key count 5
+"6"
+```
+
+<br>
+
+### __HINCRBYFLOAT__ : field의 value를 float만큼 증가or감소
+SYNTAX - `HINCRBY {key} {field} {float}`
+
+```shell
+> HINCRBYFLOAT key count 1.1
+"1.1"
+> HINCRBYFLOAT key count 5.5
+"6.6"
+```
+
+<br>
+
+### __HEXISTS__ : key의 field가 있는지 조회 (있으면 1, 없으면 0을 리턴)
+SYNTAX - `HEXISTS {key} {field}`
+
+```shell
+> HEXISTS key name
+(integer) 0
+
+> HSET key name devoong2
+(integer) 0
+> HEXISTS key name
+(integer) 1
+```
+
+<br><br>
 
 ## __Redis 접속__
 
