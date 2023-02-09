@@ -546,6 +546,17 @@ SYNTAX - `HEXISTS {key} {field}`
 
 <br><br>
 
+# __Lists__
+- Array 형태의 자료구조
+- value는 입력한 순서대로 저장
+- Stack, Queue 구현 가능
+- key와 value가 1:N 관계
+- Head, Tail에서의 작업은 O(1), 요소 중간에서의 작업은 일반적으로 O(n)의 복잡도를 가짐
+
+<br>
+
+<br><br>
+
 ## __Redis 접속__
 
 Redis는 다음과 같은 명령어를 통해 cli에 접속할 수 있습니다.
