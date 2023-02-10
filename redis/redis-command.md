@@ -13,7 +13,7 @@ Redis는 key/value 형태로 저장되는 database이며 다음과 같은 자료
 - __Bitfields__
 - __HyperLogLog__
 
-이중에서 자주 사용되는 `Strings, Lists, Sets, Hashes, SortedSets` 에 대해 한번 알아보겠습니다.
+이중에서 자주 사용되는 `Strings, Lists, Sets, Hashes, SortedSets` 에 대해 정리했습니다.
 
 <br>
 
@@ -380,6 +380,200 @@ member가 있으면 1 없으면 0을 리턴
 (integer) 1
 > SISMEMBER key1 D
 (integer) 0
+```
+
+<br><br>
+
+# __SortedSets__
+- key하나에 여러개의 score와 value로 구성
+- value는 score로 정렬되며 중복되지 않음
+- score가 같은 경우 value로 정렬됨
+- SortedSets에서는 집합이라는 의미로 value를 member라고 부름
+
+<br>
+
+### __ZADD__ : 데이터를 score와 함께 추가
+SINTAX - `ZADD {key} {score} {member} [{score} {member} ...]`  
+
+```shell
+> ZADD key 1 apple 2 banana 3 grape
+(integer) 3
+
+> ZRANGE key 0 -1
+1) "apple"
+2) "banana"
+3) "grape"
+```
+
+<br>
+
+### __ZREM__ : member 삭제
+SINTAX - `ZREM {key} {member} [{member} ...]`  
+
+```shell
+> ZADD key 1 apple 2 banana 3 grape
+(integer) 3
+
+> ZREM key apple
+"12"
+> ZRANGE key 0 -1 withscores
+1) "banana"
+2) "2"
+3) "grape"
+4) "3"
+```
+
+<br>
+
+### __ZRANGE__ : member 목록을 조회 (score가 작은것부터 조회)
+SINTAX - `ZRANGE {key} {start} {stop}`  
+
+- start, stop 은 index
+- index가 작은것부터 0, 1, 2 ... 로 정해짐
+- 전체조회는 start 0, stop -1 을 지정
+
+```shell
+> ZADD key 1 apple 2 banana 3 grape
+(integer) 3
+
+> ZRANGE key 0 -1
+1) "apple"
+2) "banana"
+3) "grape"
+-------------------------------------------------------
+> ZRANGE key 0 -1 withscores  // withscores 옵션을 사용하면 score도 같이 보여줌
+1) "apple"
+2) "1"
+3) "banana"
+4) "2"
+5) "grape"
+6) "3"
+```
+
+### __ZREVRANGE__ : member 목록을 score가 큰것부터 조회
+SINTAX - `ZRANGE {key} {start} {stop}`  
+index가 큰것부터 0, 1, 2 ... 로 정해짐
+
+```shell
+> ZADD key 1 apple 2 banana 3 grape
+(integer) 3
+
+> ZREVRANGE key 0 -1
+1) "grape"
+2) "3"
+3) "banana"
+4) "2"
+5) "apple"
+6) "1"
+```
+
+<br>
+
+### __ZCARD__ : key의 member 개수를 리턴
+SINTAX - `ZCARD {key}`  
+
+```shell
+> ZADD key 1 apple 2 banana 3 grape
+(integer) 3
+
+> ZCARD key
+(integer) 3
+```
+
+<br>
+
+### __ZINCRBY__ : 스코어를 increment만큼 증가 혹은 감소 (실수도 가능)
+SINTAX - `ZINCRBY {key} {increment} {member}`  
+
+```shell
+> ZADD key 1 apple 2 banana 3 grape
+(integer) 3
+
+> ZINCRBY key 10 banana
+"12"
+> ZRANGE key 0 -1 withscores
+1) "apple"
+2) "1"
+3) "grape"
+4) "3"
+5) "banana"
+6) "12"
+```
+
+<br>
+
+### __ZSCORE__ : member의 score를 조회
+SINTAX - `ZSCORE {key} {score}`  
+
+- min, max에 지정한 숫자를 포함해 카운팅
+- min에 -inf, max에 +inf 를 지정하면 전체를 조회
+
+```shell
+> ZADD key 1 apple 2 banana 3 grape
+(integer) 3
+
+> ZSCORE key grape
+"3"
+```
+
+<br>
+
+### __ZCOUNT__ : score로 범위를 지정해서 카운트
+SINTAX - `ZCOUNT {key} {min} {max}`  
+
+- min, max에 지정한 숫자를 포함해 카운팅
+- min에 -inf, max에 +inf 를 지정하면 전체를 조회
+
+```shell
+> ZADD key 1 apple 2 banana 3 grape
+(integer) 3
+
+> ZCOUNT key -inf +inf  // 모든 member의 수
+(integer) 3
+> ZCOUNT key 2 +inf  // score가 2이상인 member의 수
+(integer) 2
+> ZCOUNT key -inf 1  // score가 1이하인 member의 수
+(integer) 1
+> ZCOUNT key 1 2  // score가 1이상 2이하인 member의 수
+(integer) 2
+```
+
+<br>
+
+### __ZPOPMAX__ : 집합의 큰 값부터 꺼내옴
+SINTAX - `ZPOPMAX {key} {count}`  
+
+```shell
+> ZADD key 1 apple 2 banana 3 grape
+(integer) 3
+
+> ZPOPMAX key 1
+1) "grape"
+2) "3"
+> ZPOPMAX key 2
+1) "banana"
+2) "2"
+3) "apple"
+4) "1"
+```
+
+<br>
+
+### __ZPOPMIN__ : 집합의 작은 값부터 꺼내옴
+SINTAX - `ZPOPMAX {key} {count}`  
+
+```shell
+> ZADD key 1 apple 2 banana 3 grape
+(integer) 3
+
+> ZPOPMAX key 1
+1) "apple"
+2) "1"
+> ZPOPMAX key 2
+1) "banana"
+2) "2"
+3) "grape"
+4) "3"
 ```
 
 <br><br>
@@ -775,13 +969,3 @@ SYNTAX - `RPOPLPUSH {source_key} {destination_key}`
 3) "value2"
 4) "value1"
 ```
-
-<br><br>
-
-## __Redis 접속__
-
-Redis는 다음과 같은 명령어를 통해 cli에 접속할 수 있습니다.
-
-SYNTAX
-> redis-cli -h {host} -p {port}
-
