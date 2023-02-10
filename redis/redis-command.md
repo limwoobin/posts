@@ -555,6 +555,227 @@ SYNTAX - `HEXISTS {key} {field}`
 
 <br>
 
+### __LPUSH__ : 리스트의 왼쪽에 데이터를 저장
+SYNTAX - `LPUSH {key} {element} [{element} ...]`
+
+```shell
+> LPUSH key el1 el2 el3
+(integer) 3
+
+> LRANGE key 0 -1
+1) "el3"
+2) "el2"
+3) "el1"
+```
+
+### __RPUSH__ : 리스트의 오른쪽에 데이터를 저장
+SYNTAX - `RPUSH {key} {element} [{element} ...]`
+
+```shell
+> RPUSH key el1 el2 el3
+(integer) 3
+
+> LRANGE key 0 -1
+1) "el1"
+2) "el2"
+3) "el3"
+```
+
+<br>
+
+### __LPOP__ : 리스트의 왼쪽에서 데이터를 꺼냄 (꺼내진 데이터는 리스트에서 삭제)
+SYNTAX - `LPOP {key} {count}`
+
+```shell
+> LPUSH key el1 el2 el3
+(integer) 3
+
+> LPOP key
+"el3"
+
+> LRANGE key 0 -1
+1) "el2"
+2) "el1"
+```
+
+---------------------------------------------------------------------
+
+```shell
+> LPUSH key el1 el2 el3
+(integer) 3
+
+> LPOP key 2
+1) "el3"
+2) "el2"
+
+> LRANGE key 0 -1
+1) "el1"
+```
+
+### __RPOP__ : 리스트의 오른쪽에서 데이터를 꺼냄 (꺼내진 데이터는 리스트에서 삭제)
+SYNTAX - `RPOP {key} {count}`
+
+```shell
+> LPUSH key el1 el2 el3
+(integer) 3
+
+> RPOP key
+"el1"
+
+> LRANGE key 0 -1
+1) "el3"
+2) "el2"
+```
+
+---------------------------------------------------------------------
+
+```shell
+> LPUSH key el1 el2 el3
+(integer) 3
+
+> RPOP key 2
+1) "el1"
+2) "el2"
+
+> LRANGE key 0 1
+1) "el3"
+```
+
+<br>
+
+### __LRANGE__ : 인덱스의 범위로 리스트를 조회
+- 왼쪽부터 오른쪽으로 0, 1, 2... 의 index를 사용
+- 전체를 조회하려면 start: 0, stop: -1 을 지정해야함
+
+SYNTAX - `RPUSH {key} {start} {stop}`
+
+```shell
+> LPUSH key el1 el2 el3
+(integer) 3
+
+> LRANGE key 0 -1
+1) "el3"
+2) "el2"
+3) "el1"
+```
+
+__오른쪽 기준으로 조회시에는 음수를 사용__
+- 오른쪽부터 왼쪽으로 -1, -2, -3 ... 의 index를 사용
+
+```shell
+> LPUSH key el1 el2 el3
+(integer) 3
+
+
+> LRANGE key -3 -2
+1) "el3"
+2) "el2"
+```
+
+<br>
+
+### __LLEN__ : 리스트에서 value의 개수를 조회
+
+SYNTAX - `LLEN {key}`
+
+```shell
+> LPUSH key el1 el2 el3
+(integer) 3
+
+> LLEN key
+(integer) 3
+```
+
+<br>
+
+### __LINDEX__ : 인덱스로 특정 위치의 데이터를 조회
+
+SYNTAX - `LINDEX {key} {index}`
+
+```shell
+> LPUSH key el1 el2 el3
+(integer) 3
+
+> LINDEX key 0
+"el3"
+> LINDEX key 1
+"el2"
+```
+
+<br>
+
+### __LINDEX__ : 인덱스로 특정 위치의 데이터를 조회
+
+SYNTAX - `LINDEX {key} {index}`
+
+```shell
+> LPUSH key el1 el2 el3
+(integer) 3
+
+> LINDEX key 0
+"el3"
+> LINDEX key 1
+"el2"
+```
+
+<br>
+
+### __LSET__ : 인덱스로 특정 위치의 데이터를 변경
+
+SYNTAX - `LSET {key} {index} {value}`
+
+```shell
+> LPUSH key el1 el2 el3
+(integer) 3
+
+> LSET key 0 value1
+OK
+> LINDEX key 1
+"value1"
+```
+
+<br>
+
+### __LREM__ : 리스트의 데이터를 삭제
+
+SYNTAX - `LREM {key} {count} {value}`
+- count가 양수인 경우 : 지정한 value를 왼쪽에서부터 count만큼 삭제
+- count가 음수인 경우 : 지정한 value를 오른쪽에서부터 count만큼 삭제
+- count가 0인 경우 : 지정한 value를 모두 삭제
+
+```shell
+> LPUSH key el1 el2 el2 el3
+(integer) 4
+
+> LREM key 1 el2
+integer (1)
+> LRANGE key 0 -1
+1) "el3"
+2) "el2"
+3) "el1"
+```
+
+<br>
+
+### __RPOPLPUSH__ : 오른쪽에서 데이터를 꺼내 왼쪽에 넣음
+
+SYNTAX - `RPOPLPUSH {source_key} {destination_key}`
+
+```shell
+> LPUSH source el1 el2  el3
+(integer) 3
+> LPUSH destination value1 value2 value3
+(integer) 3
+
+> RPOPLPUSH source destination
+"el1"
+> LRANGE destination 0 -1
+1) "el1"
+2) "value3"
+3) "value2"
+4) "value1"
+```
+
 <br><br>
 
 ## __Redis 접속__
