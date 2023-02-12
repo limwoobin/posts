@@ -811,6 +811,12 @@ key의 field가 있는지 조회 (있으면 1, 없으면 0을 리턴)
 
 <br>
 
+> [LPUSH](#LPUSH)  [RPUSH](#RPUSH)  
+> [LPOP](#LPOP)  [RPOP](#RPOP)  
+> [LSET](#LSET)
+> [LREM](#LREM)
+> [LRANGE](#LRANGE)  [LLEN](#LLEN)  [LINDEX](#LINDEX)  [RPOPLPUSH](#RPOPLPUSH)  
+
 ### __LPUSH__
 리스트의 왼쪽에 데이터를 저장  
 `LPUSH {key} {element} [{element} ...]`
@@ -839,7 +845,7 @@ key의 field가 있는지 조회 (있으면 1, 없으면 0을 리턴)
 3) "el3"
 ```
 
-<br>
+<hr><br>
 
 ### __LPOP__
 리스트의 왼쪽에서 데이터를 꺼냄 (꺼내진 데이터는 리스트에서 삭제)  
@@ -871,7 +877,7 @@ key의 field가 있는지 조회 (있으면 1, 없으면 0을 리턴)
 1) "el1"
 ```
 
-<br>
+<hr><br>
 
 ### __RPOP__
 리스트의 오른쪽에서 데이터를 꺼냄 (꺼내진 데이터는 리스트에서 삭제)  
@@ -903,7 +909,7 @@ key의 field가 있는지 조회 (있으면 1, 없으면 0을 리턴)
 1) "el3"
 ```
 
-<br>
+<hr><br>
 
 ### __LRANGE__
 인덱스의 범위로 리스트를 조회  
@@ -935,7 +941,7 @@ __오른쪽 기준으로 조회시에는 음수를 사용__
 2) "el2"
 ```
 
-<br>
+<hr><br>
 
 ### __LLEN__
 리스트에서 value의 개수를 조회  
@@ -949,7 +955,7 @@ __오른쪽 기준으로 조회시에는 음수를 사용__
 (integer) 3
 ```
 
-<br>
+<hr><br>
 
 ### __LINDEX__
 인덱스로 특정 위치의 데이터를 조회  
@@ -965,23 +971,7 @@ __오른쪽 기준으로 조회시에는 음수를 사용__
 "el2"
 ```
 
-<br>
-
-### __LINDEX__
-인덱스로 특정 위치의 데이터를 조회  
-`LINDEX {key} {index}`
-
-```shell
-> LPUSH key el1 el2 el3
-(integer) 3
-
-> LINDEX key 0
-"el3"
-> LINDEX key 1
-"el2"
-```
-
-<br>
+<hr><br>
 
 ### __LSET__
 인덱스로 특정 위치의 데이터를 변경  
@@ -997,7 +987,7 @@ OK
 "value1"
 ```
 
-<br>
+<hr><br>
 
 ### __LREM__
 리스트의 데이터를 삭제
@@ -1019,7 +1009,7 @@ integer (1)
 3) "el1"
 ```
 
-<br>
+<hr><br>
 
 ### __RPOPLPUSH__
 오른쪽에서 데이터를 꺼내 왼쪽에 넣음  
