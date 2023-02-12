@@ -215,7 +215,7 @@ OK
 
 <br>
 
-> [SADD](#SADD)  [SETNX](#SETNX)  [SETEX](#SETEX)  [MSET](#MSET)  
+> [SADD](#SADD)  
 > [SMEMBERS](#SMEMBERS)  [SISMEMBERS](#SISMEMBERS)  [SCARD](#SCARD)  
 > [SREM](#SREM)  
 > [SUNION](#SUNION)  [SUNIONSTORE](#SUNIONSTORE)  [SINTER](#SINTER)  [SINTERSTORE](#SINTERSTORE)  [SDIFF](#SDIFF)  [SDIFFSTORE](#SDIFFSTORE)
@@ -424,6 +424,11 @@ source_key의 차집합의 결과가 destination_key에 저장된다
 
 <br>
 
+> [ZADD](#ZADD)  
+> [ZRANGE](#ZRANGE)  [ZREVRANGE](#ZREVRANGE)  [ZCARD](#ZCARD)  [ZSCORE](#ZSCORE)  [ZCOUNT](#ZCOUNT)  
+> [ZREM](#ZREM)  
+> [ZINCRBY](#ZINCRBY)  [ZPOPMAX](#ZPOPMAX)  [ZPOPMIN](#ZPOPMIN)  
+
 ### __ZADD__
 데이터를 score와 함께 추가  
 `ZADD {key} {score} {member} [{score} {member} ...]`  
@@ -438,7 +443,7 @@ source_key의 차집합의 결과가 destination_key에 저장된다
 3) "grape"
 ```
 
-<br>
+<hr><br>
 
 ### __ZREM__
 member 삭제  
@@ -457,7 +462,7 @@ member 삭제
 4) "3"
 ```
 
-<br>
+<hr><br>
 
 ### __ZRANGE__
 member 목록을 조회 (score가 작은것부터 조회)  
@@ -502,7 +507,7 @@ SINTAX - `ZRANGE {key} {start} {stop}`
 6) "1"
 ```
 
-<br>
+<hr><br>
 
 ### __ZCARD__
 key의 member 개수를 리턴  
@@ -516,7 +521,7 @@ key의 member 개수를 리턴
 (integer) 3
 ```
 
-<br>
+<hr><br>
 
 ### __ZINCRBY__
 스코어를 increment만큼 증가 혹은 감소 (실수도 가능)  
@@ -537,7 +542,7 @@ key의 member 개수를 리턴
 6) "12"
 ```
 
-<br>
+<hr><br>
 
 ### __ZSCORE__
 member의 score를 조회  
@@ -554,7 +559,7 @@ member의 score를 조회
 "3"
 ```
 
-<br>
+<hr><br>
 
 ### __ZCOUNT__
 score로 범위를 지정해서 카운트  
@@ -577,7 +582,7 @@ score로 범위를 지정해서 카운트
 (integer) 2
 ```
 
-<br>
+<hr><br>
 
 ### __ZPOPMAX__
 집합의 큰 값부터 꺼내옴  
@@ -597,7 +602,7 @@ score로 범위를 지정해서 카운트
 4) "1"
 ```
 
-<br>
+<hr><br>
 
 ### __ZPOPMIN__
 집합의 작은 값부터 꺼내옴  
@@ -617,7 +622,7 @@ score로 범위를 지정해서 카운트
 4) "3"
 ```
 
-<br><br>
+<hr><br><br>
 
 # __Hashes__
 - field-value 구조로 구성된 컬렉션 (java의 hashtable과 유사함)
