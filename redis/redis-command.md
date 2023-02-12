@@ -634,6 +634,11 @@ redis hashes 는 다음과 같은 형태를 가지게 됨
 
 <br>
 
+> [HSET](#HSET)  
+> [HGET](#HGET)  [HMGET](#HMGET)  [HGETALL](#HGETALL)  [HLEN](#HLEN)  [HKEYS](#HKEYS)  [HVALS](#HVALS)  [HEXISTS](#HEXISTS)  
+> [HDEL](#HDEL)  
+> [HINCRBY](#HINCRBY)  [HINCRBYFLOAT](#HINCRBYFLOAT)  
+
 ### __HSET__
 key에 filed와 value를 저장  
 `HSET {key} {field} {value} [{field} {value} ...]`
@@ -643,7 +648,7 @@ key에 filed와 value를 저장
 (integer) 1
 ```
 
-<br>
+<hr><br>
 
 ### __HDEL__
 key의 filed로 value를 삭제  
@@ -657,7 +662,7 @@ key의 filed로 value를 삭제
 (integer) 1
 ```
 
-<br>
+<hr><br>
 
 ### __HGETALL__
 key의 모든 field와 value를 조회  
@@ -676,7 +681,7 @@ key의 모든 field와 value를 조회
 4) "male"
 ```
 
-<br>
+<hr><br>
 
 ### __HGET__
 key와 filed로 value를 조회  
@@ -705,7 +710,7 @@ key와 filed로 여러개의 value를 조회
 2) "male"
 ```
 
-<br>
+<hr><br>
 
 ### __HLEN__
 key의 filed 개수를 조회  
@@ -721,7 +726,7 @@ key의 filed 개수를 조회
 (integer) 2
 ```
 
-<br>
+<hr><br>
 
 ### __HKEYS__
 key의 모든 filed를 조회  
@@ -753,7 +758,7 @@ key의 모든 value를 조회
 2) "male"
 ```
 
-<br>
+<hr><br>
 
 ### __HINCRBY__
 field의 value를 increment만큼 증가or감소  
@@ -766,7 +771,7 @@ field의 value를 increment만큼 증가or감소
 "6"
 ```
 
-<br>
+<hr><br>
 
 ### __HINCRBYFLOAT__
 field의 value를 float만큼 증가or감소  
@@ -779,7 +784,7 @@ field의 value를 float만큼 증가or감소
 "6.6"
 ```
 
-<br>
+<hr><br>
 
 ### __HEXISTS__
 key의 field가 있는지 조회 (있으면 1, 없으면 0을 리턴)  
@@ -795,7 +800,7 @@ key의 field가 있는지 조회 (있으면 1, 없으면 0을 리턴)
 (integer) 1
 ```
 
-<br><br>
+<hr><br><br>
 
 # __Lists__
 - Array 형태의 자료구조
