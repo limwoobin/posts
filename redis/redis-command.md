@@ -1,4 +1,4 @@
-# __Redis의 자료구조 및 CLI 사용법에 대해 알아보자__
+# __Redis의 기본 자료구조 및 사용법__
 
 Redis는 key/value 형태로 저장되는 database이며 다음과 같은 자료구조를 지원합니다.
 
@@ -24,10 +24,10 @@ Redis는 key/value 형태로 저장되는 database이며 다음과 같은 자료
 
 <br>
 
-> [SET](#set), [SETNX](#setnx), [SETEX](#setex)  
-> GET  
-> DEL  
-> 
+> [SET](#SET)  [SETNX](#SETNX)  [SETEX](#SETEX)  [MSET](#MSET)  
+> [GET](#GET)  [MGET](#MGET)  
+> [DEL](#DEL)  
+> [INCR](#INCR)  [INCRBY](#INCRBY)  [DECR](#DECR)  [DECRBY](#DECRBY)  
 
 ### __SET__
 값을 저장한다.  
@@ -44,7 +44,7 @@ OK
 "devoong2"
 ```
 
-<br>
+<hr><br>
 
 ### __DEL__
 키를 삭제한다  
@@ -57,7 +57,7 @@ OK
 (empty array)
 ```
 
-<br>
+<hr><br>
 
 ### __SETNX__
 키가 존재하지 않는 경우에만 저장한다 (SET if Not eXists)  
@@ -74,7 +74,7 @@ false
 "devoong2"
 ```
 
-<br>
+<hr><br>
 
 ### __SETEX__
 지정한 시간이 지나면 삭제되는 키를 저장 (시간 단위는 s)  
@@ -89,7 +89,7 @@ OK
 
 조회시마다 현재 남은 expire 시간을 알려준다
 
-<br>
+<hr><br>
 
 ### __MSET__
 여러개의 데이터를 한번에 저장  
@@ -114,7 +114,7 @@ OK
 2) "hello2
 ```
 
-<br>
+<hr><br>
 
 ### __INCR__
 숫자를 1씩 증가, redis에 값이 없을시에는 0부터 증가  
@@ -141,7 +141,7 @@ OK
 - redis 정수의 범위를 벗어나는 경우에도 에외 발생
 -9,223,372,036,854,775,808(2^63) ~ 9,223,372,036,854,775,807(2^63-1) 
 
-<br>
+<hr><br>
 
 ### __INCRBY__
 지정한 숫자(정수)만큼 증가, redis에 값이 없을경우 0을 기준으로 증가  
@@ -165,7 +165,7 @@ OK
 
 #### 소수점이 있는 경우엔 에러가 발생
 
-<br>
+<hr><br>
 
 ### __DECR__
 숫자를 1씩 감소, redis에 값이 없을경우 0부터 감소  
@@ -189,7 +189,7 @@ OK
 "8"
 ```
 
-<br>
+<hr><br>
 
 ### __DECRBY__
 지정한 숫자(정수)만큼 감소, redis에 값이 없을경우 0을 기준으로 감소  
@@ -204,7 +204,7 @@ OK
 "-15"
 ```
 
-<br><br>
+<hr><br><br>
 
 ## __Sets__
 - 중복되지 않는 문자열의 모음(Set 자료구조와 유사)
