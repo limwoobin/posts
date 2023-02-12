@@ -24,11 +24,18 @@ Redis는 key/value 형태로 저장되는 database이며 다음과 같은 자료
 
 <br>
 
-### __SET__ : 값을 저장한다.  
-SYNTAX - `SET {key} {value}`
+> [SET](#set), [SETNX](#setnx), [SETEX](#setex)  
+> GET  
+> DEL  
+> 
 
-### __GET__ : 값을 조회한다.  
-SYNTAX - `GET {key}`
+### __SET__
+값을 저장한다.  
+`SET {key} {value}`
+
+### __GET__ 
+값을 조회한다.  
+`GET {key}`
 
 ```shell
 > SET user devoong2
@@ -39,8 +46,9 @@ OK
 
 <br>
 
-### __DEL__ : 키를 삭제한다  
-SYNTAX - `DEL {key}`
+### __DEL__
+키를 삭제한다  
+`DEL {key}`
 
 ```shell
 > DEL user
@@ -51,8 +59,9 @@ SYNTAX - `DEL {key}`
 
 <br>
 
-### __SETNX__ : 키가 존재하지 않는 경우에만 저장한다 (SET if Not eXists)  
-SYNTAX - `SETNX {key} {value}`
+### __SETNX__
+키가 존재하지 않는 경우에만 저장한다 (SET if Not eXists)  
+`SETNX {key} {value}`
 
 ```shell
 > SETNX user devoong2
@@ -67,8 +76,9 @@ false
 
 <br>
 
-### __SETEX__ : 지정한 시간이 지나면 삭제되는 키를 저장 (시간 단위는 s)  
-SYNTAX - `SETEX {key} {value} {s}`
+### __SETEX__
+지정한 시간이 지나면 삭제되는 키를 저장 (시간 단위는 s)  
+`SETEX {key} {value} {s}`
 
 ```shell
 > SETEX user devoong2 30
@@ -81,8 +91,9 @@ OK
 
 <br>
 
-### __MSET__ : 여러개의 데이터를 한번에 저장  
-SYNTAX - `MSET {key1} {value1} {key2} {value2} ...`
+### __MSET__
+여러개의 데이터를 한번에 저장  
+`MSET {key1} {value1} {key2} {value2} ...`
 
 ```shell
 > MSET key1 Hello key2 Hello2
@@ -93,8 +104,9 @@ OK
 "Hello2"
 ```
 
-### __MGET__ : 여러개의 데이터를 한번에 조회  
-SYNTAX - `MGET {key1} {key2}`
+### __MGET__
+여러개의 데이터를 한번에 조회  
+`MGET {key1} {key2}`
 
 ```shell
 > MGET key1 key2
@@ -104,8 +116,9 @@ SYNTAX - `MGET {key1} {key2}`
 
 <br>
 
-### __INCR__ : 숫자를 1씩 증가, redis에 값이 없을시에는 0부터 증가  
-SYNTAX - `incr {key}`
+### __INCR__
+숫자를 1씩 증가, redis에 값이 없을시에는 0부터 증가  
+`incr {key}`
 
 ```shell
 > INCR key1
@@ -130,8 +143,9 @@ OK
 
 <br>
 
-### __INCRBY__ : 지정한 숫자(정수)만큼 증가, redis에 값이 없을경우 0을 기준으로 증가  
-SYNTAX - `INCRBY {key1} {n}`
+### __INCRBY__
+지정한 숫자(정수)만큼 증가, redis에 값이 없을경우 0을 기준으로 증가  
+`INCRBY {key1} {n}`
 
 ```shell
 > INCRBY key1 5
@@ -148,12 +162,14 @@ SYNTAX - `INCRBY {key1} {n}`
 > GET key1
 "-15"
 ```
+
 #### 소수점이 있는 경우엔 에러가 발생
 
 <br>
 
-### __DECR__ : 숫자를 1씩 감소, redis에 값이 없을경우 0부터 감소  
-SYNTAX - `DECR {key}`
+### __DECR__
+숫자를 1씩 감소, redis에 값이 없을경우 0부터 감소  
+`DECR {key}`
 
 ```shell
 > DECR key1
@@ -175,8 +191,9 @@ OK
 
 <br>
 
-### __DECRBY__ : 지정한 숫자(정수)만큼 감소, redis에 값이 없을경우 0을 기준으로 감소  
-SYNTAX - `DECRBY {key} {n}`
+### __DECRBY__
+지정한 숫자(정수)만큼 감소, redis에 값이 없을경우 0을 기준으로 감소  
+`DECRBY {key} {n}`
 
 ```shell
 > DECRBY key1 5
@@ -198,8 +215,9 @@ SYNTAX - `DECRBY {key} {n}`
 
 <br>
 
-### __SADD__ : 집합에 데이터를 추가  
-SYNTAX - `SADD {key} {member}`
+### __SADD__
+집합에 데이터를 추가  
+`SADD {key} {member}`
 
 ```shell
 > SADD key1 hello
@@ -231,8 +249,9 @@ example
 
 <br>
 
-### __SREM__ : 집합의 멤버를 삭제  
-SYNTAX - `SREM {key} {member} [{member} ...]`
+### __SREM__
+집합의 멤버를 삭제  
+`SREM {key} {member} [{member} ...]`
 
 ```shell
 > SADD key1 hello hello2 hello3
@@ -251,8 +270,9 @@ SYNTAX - `SREM {key} {member} [{member} ...]`
 
 <br>
 
-### __SMEMBERS__ : 집합의 모든 데이터를 조회  
-SYNTAX - `SMEMBERS {key}`
+### __SMEMBERS__
+집합의 모든 데이터를 조회  
+`SMEMBERS {key}`
 
 ```shell
 > SADD key1 hello hello2 hello3
@@ -265,8 +285,9 @@ SYNTAX - `SMEMBERS {key}`
 
 <br>
 
-### __SCARD__ : 집합에 속한 member의 개수를 조회(SLEN을 사용해도 동일)  
-SYNTAX - `SCARD {key}`
+### __SCARD__
+집합에 속한 member의 개수를 조회(SLEN을 사용해도 동일)  
+`SCARD {key}`
 
 ```shell
 > SADD key1 hello hello2 hello3
@@ -281,8 +302,9 @@ SYNTAX - `SCARD {key}`
 
 <br>
 
-### __SUNION__ : 집합들의 합집합을 구한다  
-SYNTAX - `SUNION {key} [{key} ...]`
+### __SUNION__
+집합들의 합집합을 구한다  
+`SUNION {key} [{key} ...]`
 
 ```shell
 > SADD key1 hello hello2
@@ -299,15 +321,17 @@ SYNTAX - `SUNION {key} [{key} ...]`
 3) "hello2"
 ```
 
-### __SUNIONSTORE__ : 합집합을 구해 새로운 키에 저장
-SINTAX - `SUNIONSTORE {destination_key} {source_key} [{source_key} ...]`
+### __SUNIONSTORE__
+합집합을 구해 새로운 키에 저장  
+`SUNIONSTORE {destination_key} {source_key} [{source_key} ...]`
 
 source_key의 합의 결과가 destination_key에 저장된다
 
 <br>
 
-### __SINTER__ : 집합들의 교집합을 구한다
-SYNTAX - `SINTER {key} [{key} ...]`
+### __SINTER__
+집합들의 교집합을 구한다  
+`SINTER {key} [{key} ...]`
 
 ```shell
 교집합이 있는 경우
@@ -337,15 +361,17 @@ SYNTAX - `SINTER {key} [{key} ...]`
 (empty array)
 ```
 
-### __SINTERSTORE__ : 교집합을 구해 새로운 키에 저장
-SINTAX - `SINTERSTORE {destination_key} {source_key} [{source_key} ...]`
+### __SINTERSTORE__
+교집합을 구해 새로운 키에 저장  
+`SINTERSTORE {destination_key} {source_key} [{source_key} ...]`
 
 source_key의 교집합의 결과가 destination_key에 저장된다
 
 <br>
 
-### __SDIFF__ : 집합들의 차집합을 구한다
-SYNTAX - `SDIFF {key} [{key} ...]`
+### __SDIFF__
+집합들의 차집합을 구한다  
+`SDIFF {key} [{key} ...]`
 
 ```shell
 > SADD key1 A B C
@@ -361,16 +387,17 @@ SYNTAX - `SDIFF {key} [{key} ...]`
 2) "B"
 ```
 
-### __SDIFFSTORE__ : 차집합을 구해 새로운 키에 저장
-SINTAX - `SDIFFSTORE {destination_key} {source_key} [{source_key} ...]`
+### __SDIFFSTORE__
+차집합을 구해 새로운 키에 저장  
+`SDIFFSTORE {destination_key} {source_key} [{source_key} ...]`
 
 source_key의 차집합의 결과가 destination_key에 저장된다
 
 <br>
 
-### __SISMEMBER__ : 집합에 member가 존재하는지 확인
-SINTAX - `SISMEMBER {key} {member}`  
-member가 있으면 1 없으면 0을 리턴
+### __SISMEMBER__
+집합에 member가 존재하는지 확인(member가 있으면 1 없으면 0을 리턴)  
+`SISMEMBER {key} {member}`  
 
 ```shell
 > SADD key1 A B C
@@ -392,8 +419,9 @@ member가 있으면 1 없으면 0을 리턴
 
 <br>
 
-### __ZADD__ : 데이터를 score와 함께 추가
-SINTAX - `ZADD {key} {score} {member} [{score} {member} ...]`  
+### __ZADD__
+데이터를 score와 함께 추가  
+`ZADD {key} {score} {member} [{score} {member} ...]`  
 
 ```shell
 > ZADD key 1 apple 2 banana 3 grape
@@ -407,8 +435,9 @@ SINTAX - `ZADD {key} {score} {member} [{score} {member} ...]`
 
 <br>
 
-### __ZREM__ : member 삭제
-SINTAX - `ZREM {key} {member} [{member} ...]`  
+### __ZREM__
+member 삭제  
+`ZREM {key} {member} [{member} ...]`  
 
 ```shell
 > ZADD key 1 apple 2 banana 3 grape
@@ -425,8 +454,9 @@ SINTAX - `ZREM {key} {member} [{member} ...]`
 
 <br>
 
-### __ZRANGE__ : member 목록을 조회 (score가 작은것부터 조회)
-SINTAX - `ZRANGE {key} {start} {stop}`  
+### __ZRANGE__
+member 목록을 조회 (score가 작은것부터 조회)  
+`ZRANGE {key} {start} {stop}`  
 
 - start, stop 은 index
 - index가 작은것부터 0, 1, 2 ... 로 정해짐
@@ -450,9 +480,9 @@ SINTAX - `ZRANGE {key} {start} {stop}`
 6) "3"
 ```
 
-### __ZREVRANGE__ : member 목록을 score가 큰것부터 조회
+### __ZREVRANGE__
+member 목록을 score가 큰것부터 조회(index가 큰것부터 0, 1, 2 ... 로 정해짐)  
 SINTAX - `ZRANGE {key} {start} {stop}`  
-index가 큰것부터 0, 1, 2 ... 로 정해짐
 
 ```shell
 > ZADD key 1 apple 2 banana 3 grape
@@ -469,8 +499,9 @@ index가 큰것부터 0, 1, 2 ... 로 정해짐
 
 <br>
 
-### __ZCARD__ : key의 member 개수를 리턴
-SINTAX - `ZCARD {key}`  
+### __ZCARD__
+key의 member 개수를 리턴  
+`ZCARD {key}`  
 
 ```shell
 > ZADD key 1 apple 2 banana 3 grape
@@ -482,8 +513,9 @@ SINTAX - `ZCARD {key}`
 
 <br>
 
-### __ZINCRBY__ : 스코어를 increment만큼 증가 혹은 감소 (실수도 가능)
-SINTAX - `ZINCRBY {key} {increment} {member}`  
+### __ZINCRBY__
+스코어를 increment만큼 증가 혹은 감소 (실수도 가능)  
+`ZINCRBY {key} {increment} {member}`  
 
 ```shell
 > ZADD key 1 apple 2 banana 3 grape
@@ -502,8 +534,9 @@ SINTAX - `ZINCRBY {key} {increment} {member}`
 
 <br>
 
-### __ZSCORE__ : member의 score를 조회
-SINTAX - `ZSCORE {key} {score}`  
+### __ZSCORE__
+member의 score를 조회  
+`ZSCORE {key} {score}`  
 
 - min, max에 지정한 숫자를 포함해 카운팅
 - min에 -inf, max에 +inf 를 지정하면 전체를 조회
@@ -518,8 +551,9 @@ SINTAX - `ZSCORE {key} {score}`
 
 <br>
 
-### __ZCOUNT__ : score로 범위를 지정해서 카운트
-SINTAX - `ZCOUNT {key} {min} {max}`  
+### __ZCOUNT__
+score로 범위를 지정해서 카운트  
+`ZCOUNT {key} {min} {max}`  
 
 - min, max에 지정한 숫자를 포함해 카운팅
 - min에 -inf, max에 +inf 를 지정하면 전체를 조회
@@ -540,8 +574,9 @@ SINTAX - `ZCOUNT {key} {min} {max}`
 
 <br>
 
-### __ZPOPMAX__ : 집합의 큰 값부터 꺼내옴
-SINTAX - `ZPOPMAX {key} {count}`  
+### __ZPOPMAX__
+집합의 큰 값부터 꺼내옴  
+`ZPOPMAX {key} {count}`  
 
 ```shell
 > ZADD key 1 apple 2 banana 3 grape
@@ -559,8 +594,9 @@ SINTAX - `ZPOPMAX {key} {count}`
 
 <br>
 
-### __ZPOPMIN__ : 집합의 작은 값부터 꺼내옴
-SINTAX - `ZPOPMAX {key} {count}`  
+### __ZPOPMIN__
+집합의 작은 값부터 꺼내옴  
+`ZPOPMAX {key} {count}`  
 
 ```shell
 > ZADD key 1 apple 2 banana 3 grape
@@ -588,8 +624,9 @@ redis hashes 는 다음과 같은 형태를 가지게 됨
 
 <br>
 
-### __HSET__ : key에 filed와 value를 저장
-SYNTAX - `HSET {key} {field} {value} [{field} {value} ...]`
+### __HSET__
+key에 filed와 value를 저장  
+`HSET {key} {field} {value} [{field} {value} ...]`
 
 ```shell
 > HSET person name devoong2
@@ -598,8 +635,9 @@ SYNTAX - `HSET {key} {field} {value} [{field} {value} ...]`
 
 <br>
 
-### __HDEL__ : key의 filed로 value를 삭제
-SYNTAX - `HDEL {key} {field} [{field} ...]`
+### __HDEL__
+key의 filed로 value를 삭제  
+`HDEL {key} {field} [{field} ...]`
 
 ```shell
 > HSET person name devoong2
@@ -611,8 +649,9 @@ SYNTAX - `HDEL {key} {field} [{field} ...]`
 
 <br>
 
-### __HGETALL__ : key의 모든 field와 value를 조회
-SYNTAX - `HGETALL {key}`
+### __HGETALL__
+key의 모든 field와 value를 조회  
+`HGETALL {key}`
 
 ```shell
 > HSET person name devoong2
@@ -629,8 +668,9 @@ SYNTAX - `HGETALL {key}`
 
 <br>
 
-### __HGET__ : key와 filed로 value를 조회
-SYNTAX - `HGET {key} {field}`
+### __HGET__
+key와 filed로 value를 조회  
+`HGET {key} {field}`
 
 ```shell
 > HSET person name devoong2
@@ -640,8 +680,9 @@ SYNTAX - `HGET {key} {field}`
 "devoong2"
 ```
 
-### __HMGET__ : key와 filed로 여러개의 value를 조회
-SYNTAX - `HGET {key} [{key} ...]`
+### __HMGET__
+key와 filed로 여러개의 value를 조회  
+`HGET {key} [{key} ...]`
 
 ```shell
 > HSET person name devoong2
@@ -656,8 +697,9 @@ SYNTAX - `HGET {key} [{key} ...]`
 
 <br>
 
-### __HLEN__ : key의 filed 개수를 조회
-SYNTAX - `HLEN {key} {field}`
+### __HLEN__
+key의 filed 개수를 조회  
+`HLEN {key} {field}`
 
 ```shell
 > HSET person name devoong2
@@ -671,8 +713,9 @@ SYNTAX - `HLEN {key} {field}`
 
 <br>
 
-### __HKEYS__ : key의 모든 filed를 조회
-SYNTAX - `HKEYS {key}`
+### __HKEYS__
+key의 모든 filed를 조회  
+`HKEYS {key}`
 
 ```shell
 > HSET person name devoong2
@@ -685,8 +728,9 @@ SYNTAX - `HKEYS {key}`
 2) "gender"
 ```
 
-### __HVALS__ : key의 모든 value를 조회
-SYNTAX - `HVALS {key}`
+### __HVALS__
+key의 모든 value를 조회  
+`HVALS {key}`
 
 ```shell
 > HSET person name devoong2
@@ -701,8 +745,9 @@ SYNTAX - `HVALS {key}`
 
 <br>
 
-### __HINCRBY__ : field의 value를 increment만큼 증가or감소
-SYNTAX - `HINCRBY {key} {field} {increment}`
+### __HINCRBY__
+field의 value를 increment만큼 증가or감소  
+`HINCRBY {key} {field} {increment}`
 
 ```shell
 > HINCRBY key count 1
@@ -713,8 +758,9 @@ SYNTAX - `HINCRBY {key} {field} {increment}`
 
 <br>
 
-### __HINCRBYFLOAT__ : field의 value를 float만큼 증가or감소
-SYNTAX - `HINCRBY {key} {field} {float}`
+### __HINCRBYFLOAT__
+field의 value를 float만큼 증가or감소  
+`HINCRBY {key} {field} {float}`
 
 ```shell
 > HINCRBYFLOAT key count 1.1
@@ -725,8 +771,9 @@ SYNTAX - `HINCRBY {key} {field} {float}`
 
 <br>
 
-### __HEXISTS__ : key의 field가 있는지 조회 (있으면 1, 없으면 0을 리턴)
-SYNTAX - `HEXISTS {key} {field}`
+### __HEXISTS__
+key의 field가 있는지 조회 (있으면 1, 없으면 0을 리턴)  
+`HEXISTS {key} {field}`
 
 ```shell
 > HEXISTS key name
@@ -749,8 +796,9 @@ SYNTAX - `HEXISTS {key} {field}`
 
 <br>
 
-### __LPUSH__ : 리스트의 왼쪽에 데이터를 저장
-SYNTAX - `LPUSH {key} {element} [{element} ...]`
+### __LPUSH__
+리스트의 왼쪽에 데이터를 저장  
+`LPUSH {key} {element} [{element} ...]`
 
 ```shell
 > LPUSH key el1 el2 el3
@@ -762,8 +810,9 @@ SYNTAX - `LPUSH {key} {element} [{element} ...]`
 3) "el1"
 ```
 
-### __RPUSH__ : 리스트의 오른쪽에 데이터를 저장
-SYNTAX - `RPUSH {key} {element} [{element} ...]`
+### __RPUSH__
+리스트의 오른쪽에 데이터를 저장  
+`RPUSH {key} {element} [{element} ...]`
 
 ```shell
 > RPUSH key el1 el2 el3
@@ -777,8 +826,9 @@ SYNTAX - `RPUSH {key} {element} [{element} ...]`
 
 <br>
 
-### __LPOP__ : 리스트의 왼쪽에서 데이터를 꺼냄 (꺼내진 데이터는 리스트에서 삭제)
-SYNTAX - `LPOP {key} {count}`
+### __LPOP__
+리스트의 왼쪽에서 데이터를 꺼냄 (꺼내진 데이터는 리스트에서 삭제)  
+`LPOP {key} {count}`
 
 ```shell
 > LPUSH key el1 el2 el3
@@ -806,8 +856,11 @@ SYNTAX - `LPOP {key} {count}`
 1) "el1"
 ```
 
-### __RPOP__ : 리스트의 오른쪽에서 데이터를 꺼냄 (꺼내진 데이터는 리스트에서 삭제)
-SYNTAX - `RPOP {key} {count}`
+<br>
+
+### __RPOP__
+리스트의 오른쪽에서 데이터를 꺼냄 (꺼내진 데이터는 리스트에서 삭제)  
+`RPOP {key} {count}`
 
 ```shell
 > LPUSH key el1 el2 el3
@@ -837,11 +890,12 @@ SYNTAX - `RPOP {key} {count}`
 
 <br>
 
-### __LRANGE__ : 인덱스의 범위로 리스트를 조회
+### __LRANGE__
+인덱스의 범위로 리스트를 조회  
 - 왼쪽부터 오른쪽으로 0, 1, 2... 의 index를 사용
 - 전체를 조회하려면 start: 0, stop: -1 을 지정해야함
 
-SYNTAX - `RPUSH {key} {start} {stop}`
+`RPUSH {key} {start} {stop}`
 
 ```shell
 > LPUSH key el1 el2 el3
@@ -868,9 +922,9 @@ __오른쪽 기준으로 조회시에는 음수를 사용__
 
 <br>
 
-### __LLEN__ : 리스트에서 value의 개수를 조회
-
-SYNTAX - `LLEN {key}`
+### __LLEN__
+리스트에서 value의 개수를 조회  
+`LLEN {key}`
 
 ```shell
 > LPUSH key el1 el2 el3
@@ -882,25 +936,9 @@ SYNTAX - `LLEN {key}`
 
 <br>
 
-### __LINDEX__ : 인덱스로 특정 위치의 데이터를 조회
-
-SYNTAX - `LINDEX {key} {index}`
-
-```shell
-> LPUSH key el1 el2 el3
-(integer) 3
-
-> LINDEX key 0
-"el3"
-> LINDEX key 1
-"el2"
-```
-
-<br>
-
-### __LINDEX__ : 인덱스로 특정 위치의 데이터를 조회
-
-SYNTAX - `LINDEX {key} {index}`
+### __LINDEX__
+인덱스로 특정 위치의 데이터를 조회  
+`LINDEX {key} {index}`
 
 ```shell
 > LPUSH key el1 el2 el3
@@ -914,9 +952,25 @@ SYNTAX - `LINDEX {key} {index}`
 
 <br>
 
-### __LSET__ : 인덱스로 특정 위치의 데이터를 변경
+### __LINDEX__
+인덱스로 특정 위치의 데이터를 조회  
+`LINDEX {key} {index}`
 
-SYNTAX - `LSET {key} {index} {value}`
+```shell
+> LPUSH key el1 el2 el3
+(integer) 3
+
+> LINDEX key 0
+"el3"
+> LINDEX key 1
+"el2"
+```
+
+<br>
+
+### __LSET__
+인덱스로 특정 위치의 데이터를 변경  
+`LSET {key} {index} {value}`
 
 ```shell
 > LPUSH key el1 el2 el3
@@ -930,12 +984,13 @@ OK
 
 <br>
 
-### __LREM__ : 리스트의 데이터를 삭제
-
-SYNTAX - `LREM {key} {count} {value}`
+### __LREM__
+리스트의 데이터를 삭제
 - count가 양수인 경우 : 지정한 value를 왼쪽에서부터 count만큼 삭제
 - count가 음수인 경우 : 지정한 value를 오른쪽에서부터 count만큼 삭제
 - count가 0인 경우 : 지정한 value를 모두 삭제
+
+`LREM {key} {count} {value}`
 
 ```shell
 > LPUSH key el1 el2 el2 el3
@@ -951,9 +1006,9 @@ integer (1)
 
 <br>
 
-### __RPOPLPUSH__ : 오른쪽에서 데이터를 꺼내 왼쪽에 넣음
-
-SYNTAX - `RPOPLPUSH {source_key} {destination_key}`
+### __RPOPLPUSH__
+오른쪽에서 데이터를 꺼내 왼쪽에 넣음  
+`RPOPLPUSH {source_key} {destination_key}`
 
 ```shell
 > LPUSH source el1 el2  el3
