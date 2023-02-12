@@ -215,6 +215,11 @@ OK
 
 <br>
 
+> [SADD](#SADD)  [SETNX](#SETNX)  [SETEX](#SETEX)  [MSET](#MSET)  
+> [SMEMBERS](#SMEMBERS)  [SISMEMBERS](#SISMEMBERS)  [SCARD](#SCARD)  
+> [SREM](#SREM)  
+> [SUNION](#SUNION)  [SUNIONSTORE](#SUNIONSTORE)  [SINTER](#SINTER)  [SINTERSTORE](#SINTERSTORE)  [SDIFF](#SDIFF)  [SDIFFSTORE](#SDIFFSTORE)
+
 ### __SADD__
 집합에 데이터를 추가  
 `SADD {key} {member}`
@@ -247,7 +252,7 @@ example
 ...
 ```
 
-<br>
+<hr><br>
 
 ### __SREM__
 집합의 멤버를 삭제  
@@ -268,7 +273,7 @@ example
 (empty array)
 ```
 
-<br>
+<hr><br>
 
 ### __SMEMBERS__
 집합의 모든 데이터를 조회  
@@ -283,7 +288,23 @@ example
 3) "hello"
 ```
 
-<br>
+<hr><br>
+
+### __SISMEMBER__
+집합에 member가 존재하는지 확인(member가 있으면 1 없으면 0을 리턴)  
+`SISMEMBER {key} {member}`  
+
+```shell
+> SADD key1 A B C
+(integer) 3
+
+> SISMEMBER key1 A
+(integer) 1
+> SISMEMBER key1 D
+(integer) 0
+```
+
+<hr><br>
 
 ### __SCARD__
 집합에 속한 member의 개수를 조회(SLEN을 사용해도 동일)  
@@ -300,7 +321,7 @@ example
 (integer 2)
 ```
 
-<br>
+<hr><br>
 
 ### __SUNION__
 집합들의 합집합을 구한다  
@@ -327,7 +348,7 @@ example
 
 source_key의 합의 결과가 destination_key에 저장된다
 
-<br>
+<hr><br>
 
 ### __SINTER__
 집합들의 교집합을 구한다  
@@ -367,7 +388,7 @@ source_key의 합의 결과가 destination_key에 저장된다
 
 source_key의 교집합의 결과가 destination_key에 저장된다
 
-<br>
+<hr><br>
 
 ### __SDIFF__
 집합들의 차집합을 구한다  
@@ -393,23 +414,7 @@ source_key의 교집합의 결과가 destination_key에 저장된다
 
 source_key의 차집합의 결과가 destination_key에 저장된다
 
-<br>
-
-### __SISMEMBER__
-집합에 member가 존재하는지 확인(member가 있으면 1 없으면 0을 리턴)  
-`SISMEMBER {key} {member}`  
-
-```shell
-> SADD key1 A B C
-(integer) 3
-
-> SISMEMBER key1 A
-(integer) 1
-> SISMEMBER key1 D
-(integer) 0
-```
-
-<br><br>
+<hr><br><br>
 
 # __SortedSets__
 - key하나에 여러개의 score와 value로 구성
