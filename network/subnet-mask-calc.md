@@ -21,9 +21,29 @@ ip는 __네트워크 주소, 호스트 주소__ 두가지로 나뉘어집니다.
 
 ## __IP 주소의 클래스__
 
+IP 주소는 크게 5개(A, B, C, D, E)의 클래스로 나누어집니다.
 
+![subnet-test-image1](https://user-images.githubusercontent.com/28802545/220901305-f0d1ff85-29fe-4982-b99d-988c6104fde6.png)
 
-이 개념을 
+<br>
+
+#### __Class A__
+- `0.0.0.0 ~ 127.255.255.255 (0xxx xxxx. xxxx xxxx. xxxx xxxx. xxxx xxxx)`
+- 네트워크 주소는 `1.0.0.0 ~ 126.0.0.0` 으로 규정되어 있음 (127은 규정상 제외)
+- 호스트의 개수는 2^24 - 2
+
+#### __Class B__
+- `128.0.0.0 ~ 191.255.255.255 (10xx xxxx. xxxx xxxx. xxxx xxxx. xxxx xxxx)`
+- 네트워크 개수는 2^14
+- 호스트의 개수는 2^16 - 2
+
+#### __Class C__
+- `0.0.0.0 ~ 127.255.255.255 (110x xxxx. xxxx xxxx. xxxx xxxx. xxxx xxxx)`
+- 네트워크 개수는 2^21
+- 호스트의 개수는 2^8 - 2
+
+여기서 호스트 주소에 왜 -2를 하는지 설명드리겠습니다.
+
 
 <br>
 
