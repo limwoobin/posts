@@ -17,17 +17,15 @@ comment : true
 
 풀필먼트 입고서비스에서는 다양한 동시성 문제들을 맞닥드리고 있는데요. 이를 해결하기 위해 시행착오를 겪었던 경험에 대해 공유드리려고 합니다.
 
-입고서비스에서는 다양한 동시성 문제들을 가지고 있었습니다.
-- 카프카로 동시에 들어오는 중복된 발주를 수신하는 문제
-- 검수/검품 이슈 등록시 더블 클릭, 네트워크 이슈로 인해 같은 리퀘스트가 여러개 동시에 들어오는 문제
-- 이동출고시 여러 작업자가 CTA를 동시에 클릭하여 잘못된 재고 트랜잭션이 생성되는 문제
+RMS에는 여러 동시성 문제를 가지고 있었습니다.
+- 카프카로 동시에 들어오는 중복된 발주를 수신하는 경우
+- 검수/검품 이슈 등록시 더블 클릭, 네트워크 이슈로 인해 같은 리퀘스트가 여러개 동시에 들어오는 경우
+- 이동출고시 여러 작업자가 CTA를 동시에 클릭하여 잘못된 재고 트랜잭션이 생성되는 경우
 
-등등 이외에도 다양한 경우의 동시성 이슈가 시스템에 존재했습니다.
+등등 이외에도 다양한 경우의 동시성 이슈가 서비스에 존재했습니다.
 
-해당 기능에 대해 Application에서의 예외처리는 존재했지만 그것만으로는 멀티 인스턴스 환경에서 동시성으로 인해 발생하는 문제를 해결하기엔 .
-
+해당 기능에 대해 Application에서의 예외처리는 존재했지만 보다 확실하게 동시성 이슈를 처리할 방법이 필요했습니다.  
 그래서 멀티 인스턴스 환경에서도 공통된 락을 사용할 수 있는 `Remote Data Source`를 고려하게 되었습니다.  
-
 
 ## 2. Redis의 Redisson 라이브러리를 도입한 이유
 
@@ -37,18 +35,27 @@ comment : true
 
 ## 3. 분산락을 보다 손쉽게 사용할 수는 없을까?
 
-분산락을 도입하며 보다 손쉽고 커스텀하게 사용하면 어떨까? 라는 고민을 시작으로 몇가지 규칙을 만들었습니다.  
-
-우선 어노테이션 기반으로 AOP를 이용해 비지니스로직과 분산락 로직을 분리해 각자의 역할에 충실하게 작성했습니다.
+분산락을 도입하며 보다 손쉽고 커스텀하게 사용할 수 없을까? 라는 고민을 시작으로 몇가지 규칙을 만들었습니다.  
 
 1. 분산락 처리 로직은 비즈니스 로직이 오염되지 않게 분리해서 사용한다.
 2. waitTime, leaseTime을 커스텀하게 지정 가능하다.
 3. 락의 key name에 대해 사용자로부터 커스텀하게 받아 처리한다.
 4. 락을 획득하지 못한 경우의 처리에 대해 커스텀하게 설정할 수 있다.
 
-다음과 같은 요구사항을 충족하기 위해 어노테이션 기반으로 AOP를 이용해 분산락 컴포넌트를 만들었습니다.
+다음과 같은 규칙을 충족하기 위해 어노테이션 기반으로 AOP를 이용해 분산락 컴포넌트를 만들었습니다.  
+입고서비스에서 분산락을 사용하는 방법은 다음과 같습니다.
 
-DistributedLock.java
+__build.gradle__
+```java
+dependencies {
+    // redisson
+    implementation 'org.redisson:redisson-spring-boot-starter:3.18.0'
+}
+```
+Redisson 라이브러리를 사용하기 위해 의존성을 추가합니다.
+
+
+__DistributedLock.java__
 ```java
 /**
  * Redisson Distributed Lock annotation
@@ -68,22 +75,23 @@ public @interface DistributedLock {
     TimeUnit timeUnit() default TimeUnit.SECONDS;
 
     /**
-     * 락을 기다리는 시간 (default - 10seconds)
+     * 락을 기다리는 시간 (default - 5econds)
      * 락 획득을 위해 waitTime 만큼 대기한다
      */
     long waitTime() default 5L;
 
     /**
-     * 락 임대 시간 (default - 7seconds)
+     * 락 임대 시간 (default - 3seconds)
      * 락을 획득한 이후 leaseTime 이 지나면 락을 해제한다
      */
     long leaseTime() default 3L;
 }
 ```
 
-`DistributedLock` 어노테이션의 파라미터는 key는 필수값, 나머지는 커스텀하게 설정할 수 있도록 작성했습니다. waitTime, leaseTime은 서비스의 api의 수행속도를 고려해 넉넉히 잡았습니다.  
+`DistributedLock` 어노테이션의 파라미터는 key는 필수값, 나머지는 커스텀하게 설정할 수 있도록 작성했습니다. 
+여기서 주의할 점은 `waitTime`은 `leaseTime`보다 길게 잡아주어야 합니다.
 
-DistributedLockAop.java
+__DistributedLockAop.java__
 ```java
 /**
  * @DistributedLock 선언 시 수행되는 Aop class
