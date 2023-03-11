@@ -43,7 +43,7 @@ RMS에는 여러 동시성 문제를 가지고 있었습니다.
 4. 락을 획득하지 못한 경우의 처리에 대해 커스텀하게 설정할 수 있다.
 
 다음과 같은 규칙을 충족하기 위해 어노테이션 기반으로 AOP를 이용해 분산락 컴포넌트를 만들었습니다.  
-입고서비스에서 분산락을 사용하는 방법은 다음과 같습니다.
+입고서비스에서 분산락 컴포넌트를 사용하는 방법은 다음과 같습니다.
 
 __build.gradle__
 ```java
@@ -78,7 +78,7 @@ public class RedissonConfig {
 }
 ```
 
-RedissonClient를 사용하기 위해 Config 설정을 빈으로 등록합니다.
+`RedissonClient`를 사용하기 위해 Config 설정을 빈으로 등록합니다.
 
 
 __DistributedLock.java__
@@ -101,13 +101,13 @@ public @interface DistributedLock {
     TimeUnit timeUnit() default TimeUnit.SECONDS;
 
     /**
-     * 락을 기다리는 시간 (default - 5econds)
+     * 락을 기다리는 시간 (default - 5s)
      * 락 획득을 위해 waitTime 만큼 대기한다
      */
     long waitTime() default 5L;
 
     /**
-     * 락 임대 시간 (default - 3seconds)
+     * 락 임대 시간 (default - 3s)
      * 락을 획득한 이후 leaseTime 이 지나면 락을 해제한다
      */
     long leaseTime() default 3L;
@@ -115,13 +115,13 @@ public @interface DistributedLock {
 ```
 
 `DistributedLock` 어노테이션의 파라미터는 key는 필수값, 나머지는 커스텀하게 설정할 수 있도록 작성했습니다.  
-여기서 주의할 점은 `waitTime`은 `leaseTime`보다 길게 잡아주어야 합니다.  
+여기서 주의할 점은 `waitTime`은 `leaseTime`보다 길게 잡아주어야 합니다.(??)  
 만약 `waitTime` 이 `leaseTime` 보다 짧다면 락이 이미 선점된 경우 획득을 기다리지 않고 바로 함수가 종료될 수 있기 때문입니다.
 
 예를 들어, `waitTime`은 3초, `leaseTime`은 5초 함수의 실행시간은 4초라고 가정해보겠습니다.  
-리퀘스트 A,B가 함수에 동시에 접근했을때 A가 락을 먼저 선점했습니다. A는 4초동안에 로직을 수행합니다.  
+리퀘스트 A,B가 함수에 동시에 접근했을때 간발의 차이로 A가 먼저 락을 선점했습니다. A는 4초동안에 로직을 수행합니다.  
 B는 3초동안 락 획득을 기다리다 획득에 실패하고 함수에 접근을 못하는 경우가 생길 수 있습니다.  
-만약 반대로 `waitTime`은 5초, `leaseTime`은 3초였다면 B요청은 락 획득에 성공하고 A,B 모두 정상적으로 로직을 수행했을것입니다.
+만약 반대로 `waitTime`은 5초, `leaseTime`은 3초였다면 B요청은 락 획득에 성공하고 A,B 모두 정상적으로 로직을 수행 할 수 있습니다.
 
 
 __DistributedLockAop.java__
@@ -146,18 +146,17 @@ public class DistributedLockAop {
         DistributedLock distributedLock = method.getAnnotation(DistributedLock.class);
 
         String key = REDISSON_LOCK_PREFIX + CustomSpringELParser.getDynamicValue(signature.getParameterNames(), joinPoint.getArgs(), distributedLock.key());
-        RLock rLock = redissonClient.getLock(key);
+        RLock rLock = redissonClient.getLock(key);  // (1)
 
         try {
-            boolean available = rLock.tryLock(distributedLock.waitTime(), distributedLock.leaseTime(), distributedLock.timeUnit());
+            boolean available = rLock.tryLock(distributedLock.waitTime(), distributedLock.leaseTime(), distributedLock.timeUnit());  // (2)
             if (!available) {
                 return false;
             }
 
-            return aopForTransaction.proceed(joinPoint);
+            return aopForTransaction.proceed(joinPoint);  // (3)
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RmsServerException(ExceptionType.FAILED_CONNECTED_INBOUND);
+            throw new InterruptedException();
         } finally {
             try {
                 rLock.unlock();
@@ -173,12 +172,14 @@ public class DistributedLockAop {
 ```
 
 다음은 `@DistributedLock` 어노테이션 선언시 수행되는 aop 클래스입니다.  
-`DistributedLock` 파일을 읽어와 파라미터 변수들을 가져와 분산락 획득 시도 및 기능 수행을 진행합니다.
+`@DistributedLock` 어노테이션의 파라미터 값을 가져와 분산락 획득 시도 그리고 어노테이션이 선언된 메소드를 실행합니다.
 
-여기서 주의해서 봐야할 점은 `CustomSpringELParser` 와 `AopForTransaction` 클래스입니다.
+1) asd 
+2) asd
+3) asd
 
-`CustomSpringELParser` 는 전달받은 락의 name을 `Spring Expression Language` 로 파싱하여 읽어옵니다.  
-`AopForTransaction` 는 메소드의 로직을 별도의 트랜잭션으로 처리해주고 있습니다.  
+여기서 주의해서 볼 부분은 `CustomSpringELParser` 와 `AopForTransaction` 클래스입니다.
+이 클래스들은 어떤 역할을 하는지 살펴보겠습니다.
 
 
 __CustomSpringELParser.java__
@@ -203,12 +204,12 @@ public class CustomSpringELParser {
 }
 ```
 
-분산락 사용시 락의 이름은 다음과 같은 방법으로 전달할 수 있게하여 사용자 편의성을 고려했습니다.
+`CustomSpringELParser` 는 전달받은 Lock의 이름을 `Spring Expression Language` 로 파싱하여 읽어옵니다.  
 
 ```java
 // (1)
-@DistributedLock(key = "#key")
-public void shipment(String key) {
+@DistributedLock(key = "#lockName")
+public void shipment(String lockName) {
     ...
 }
 
@@ -236,13 +237,13 @@ public class ShipmentModel {
 }
 ```
 
-`Spring Expression Language` 를 사용하면 락의 이름을 보다 자유롭게 지정할 수 있습니다.
+다음과 같이 Lock의 이름을 보다 자유롭게 지정하여 전달 할 수 있습니다.
 
 
-AopForTransaction.java
+__AopForTransaction.java__
 ```java
 /**
- * Aop에서 트랜잭션 분리를 위한 클래스
+ * AOP에서 트랜잭션 분리를 위한 클래스
  */
 @Component
 public class AopForTransaction {
@@ -256,8 +257,8 @@ public class AopForTransaction {
 
 `@DistributedLock` 이 선언된 메소드는 별도의 트랜잭션으로 동작하게끔 설정했습니다.  
 
-`Propagation.REQUIRES_NEW` 옵션을 지정한 이유는 부모 트랜잭션의 유무와 상관없이 별도의 트랜잭션으로 동작하게 하기 위해서 입니다. 그리고 트랜잭션이 커밋이 되고 난 이후 반드시 락이 해제되게끔 처리했습니다.  
-그렇다면 왜 트랜잭션이 커밋되고 난 이후 락이 해제되어야 할까요?? 
+`Propagation.REQUIRES_NEW` 옵션을 지정한 이유는 부모 트랜잭션의 유무와 관계없이 별도의 트랜잭션으로 동작하게 하기 위해서 입니다. 그리고 반드시 트랜잭션 커밋 이후 락이 해제되게끔 처리했습니다.  
+왜 트랜잭션이 커밋되고 난 이후 락이 해제되어야 할까요?? 
 
 다음과 같은 예시를 들어보겠습니다.
 
@@ -266,3 +267,5 @@ A지번의 재고를 B지번으로 옮기기 위해 우선 A지번의 재고를 
 - A지번에는 10개의 재고가 존재한다.
 - 재고를 옮기는 사용자는 여러명이다.
 
+
+## 분산락 테스트 코드
