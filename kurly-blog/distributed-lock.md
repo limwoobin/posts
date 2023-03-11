@@ -13,7 +13,7 @@ comment : true
 
 ## 1. 들어가며
 
-안녕하세요. 컬리에서 풀필먼트 프로덕트의 입고서비스를 개발하고 있는 임우빈입니다.  
+안녕하세요. 컬리 풀필먼트 프로덕트에서 입고서비스를 개발하고 있는 임우빈입니다.  
 
 풀필먼트 입고서비스에서는 다양한 동시성 문제들을 맞닥드리고 있는데요. 이를 해결하기 위해 시행착오를 겪었던 경험에 대해 공유드리려고 합니다.
 
@@ -55,6 +55,32 @@ dependencies {
 Redisson 라이브러리를 사용하기 위해 의존성을 추가합니다.
 
 
+__RedissonConfig.java__
+```java
+@Configuration
+public class RedissonConfig {
+    @Value("${spring.redis.host}")
+    private String redisHost;
+
+    @Value("${spring.redis.port}")
+    private int redisPort;
+
+    private static final String REDISSON_HOST_PREFIX = "redis://";
+
+    @Bean
+    public RedissonClient redissonClient() {
+        RedissonClient redisson = null;
+        Config config = new Config();
+        config.useSingleServer().setAddress(REDISSON_HOST_PREFIX + redisHost + ":" + redisPort);
+        redisson = Redisson.create(config);
+        return redisson;
+    }
+}
+```
+
+RedissonClient를 사용하기 위해 Config 설정을 빈으로 등록합니다.
+
+
 __DistributedLock.java__
 ```java
 /**
@@ -88,8 +114,15 @@ public @interface DistributedLock {
 }
 ```
 
-`DistributedLock` 어노테이션의 파라미터는 key는 필수값, 나머지는 커스텀하게 설정할 수 있도록 작성했습니다. 
-여기서 주의할 점은 `waitTime`은 `leaseTime`보다 길게 잡아주어야 합니다.
+`DistributedLock` 어노테이션의 파라미터는 key는 필수값, 나머지는 커스텀하게 설정할 수 있도록 작성했습니다.  
+여기서 주의할 점은 `waitTime`은 `leaseTime`보다 길게 잡아주어야 합니다.  
+만약 `waitTime` 이 `leaseTime` 보다 짧다면 락이 이미 선점된 경우 획득을 기다리지 않고 바로 함수가 종료될 수 있기 때문입니다.
+
+예를 들어, `waitTime`은 3초, `leaseTime`은 5초 함수의 실행시간은 4초라고 가정해보겠습니다.  
+리퀘스트 A,B가 함수에 동시에 접근했을때 A가 락을 먼저 선점했습니다. A는 4초동안에 로직을 수행합니다.  
+B는 3초동안 락 획득을 기다리다 획득에 실패하고 함수에 접근을 못하는 경우가 생길 수 있습니다.  
+만약 반대로 `waitTime`은 5초, `leaseTime`은 3초였다면 B요청은 락 획득에 성공하고 A,B 모두 정상적으로 로직을 수행했을것입니다.
+
 
 __DistributedLockAop.java__
 ```java
@@ -170,7 +203,7 @@ public class CustomSpringELParser {
 }
 ```
 
-분산락 사용시 락의 name은 다음과 같은 방법으로 전달할 수 있게하여 사용자 편의성을 고려했습니다.
+분산락 사용시 락의 이름은 다음과 같은 방법으로 전달할 수 있게하여 사용자 편의성을 고려했습니다.
 
 ```java
 // (1)
@@ -203,7 +236,7 @@ public class ShipmentModel {
 }
 ```
 
-`Spring Expression Language` 를 사용하면 락의 name 지정에 대해 보다 자유롭게 지정할 수 있습니다.
+`Spring Expression Language` 를 사용하면 락의 이름을 보다 자유롭게 지정할 수 있습니다.
 
 
 AopForTransaction.java
