@@ -32,7 +32,6 @@ RMS에는 여러 동시성 문제를 가지고 있었습니다.
 어떤 `Remote Data Source`를 사용할지에 대해 먼저 고민해보았습니다.  
 우선적으로 팀에서 현재 사용중인 기술스택인 `mysql`과 `redis`를 선택지로 놓았습니다.
 
-
 ## 3. 분산락을 보다 손쉽게 사용할 수는 없을까?
 
 분산락을 도입하며 보다 손쉽고 커스텀하게 사용할 수 없을까? 라는 고민을 시작으로 몇가지 규칙을 만들었습니다.  
@@ -114,14 +113,7 @@ public @interface DistributedLock {
 }
 ```
 
-`DistributedLock` 어노테이션의 파라미터는 key는 필수값, 나머지는 커스텀하게 설정할 수 있도록 작성했습니다.  
-여기서 주의할 점은 `waitTime`은 `leaseTime`보다 길게 잡아주어야 합니다.(??)  
-만약 `waitTime` 이 `leaseTime` 보다 짧다면 락이 이미 선점된 경우 획득을 기다리지 않고 바로 함수가 종료될 수 있기 때문입니다.
-
-예를 들어, `waitTime`은 3초, `leaseTime`은 5초 함수의 실행시간은 4초라고 가정해보겠습니다.  
-리퀘스트 A,B가 함수에 동시에 접근했을때 간발의 차이로 A가 먼저 락을 선점했습니다. A는 4초동안에 로직을 수행합니다.  
-B는 3초동안 락 획득을 기다리다 획득에 실패하고 함수에 접근을 못하는 경우가 생길 수 있습니다.  
-만약 반대로 `waitTime`은 5초, `leaseTime`은 3초였다면 B요청은 락 획득에 성공하고 A,B 모두 정상적으로 로직을 수행 할 수 있습니다.
+`DistributedLock` 어노테이션의 파라미터는 key는 필수값, 나머지 값들은 커스텀하게 설정할 수 있도록 작성했습니다.  
 
 
 __DistributedLockAop.java__
@@ -132,7 +124,7 @@ __DistributedLockAop.java__
 @Aspect
 @Component
 @RequiredArgsConstructor
-@Slf4j
+@Sl4j
 public class DistributedLockAop {
     private static final String REDISSON_LOCK_PREFIX = "LOCK:";
 
@@ -179,7 +171,7 @@ public class DistributedLockAop {
 3) asd
 
 여기서 주의해서 볼 부분은 `CustomSpringELParser` 와 `AopForTransaction` 클래스입니다.
-이 클래스들은 어떤 역할을 하는지 살펴보겠습니다.
+이 클래스들은 분산락 컴포넌트에서 어떤 역할을 맡고 있을까요??
 
 
 __CustomSpringELParser.java__
@@ -237,7 +229,7 @@ public class ShipmentModel {
 }
 ```
 
-다음과 같이 Lock의 이름을 보다 자유롭게 지정하여 전달 할 수 있습니다.
+`SpringEL`을 사용하면 다음과 같이 Lock의 이름을 보다 자유롭게 전달할 수 있습니다.
 
 
 __AopForTransaction.java__
@@ -255,17 +247,24 @@ public class AopForTransaction {
 }
 ```
 
-`@DistributedLock` 이 선언된 메소드는 별도의 트랜잭션으로 동작하게끔 설정했습니다.  
+`@DistributedLock` 이 선언된 메소드는 `Propagation.REQUIRES_NEW` 옵션을 주어 부모 트랜잭션의 유무에 관계없이 별도의 트랜잭션으로 동작하게끔 설정했습니다.  
+그리고 반드시 트랜잭션 커밋 이후 락이 해제되게끔 처리했습니다.  
 
-`Propagation.REQUIRES_NEW` 옵션을 지정한 이유는 부모 트랜잭션의 유무와 관계없이 별도의 트랜잭션으로 동작하게 하기 위해서 입니다. 그리고 반드시 트랜잭션 커밋 이후 락이 해제되게끔 처리했습니다.  
 왜 트랜잭션이 커밋되고 난 이후 락이 해제되어야 할까요?? 
+> 바로 동시성 환경에서 데이터의 정합성을 보장하기 위해서 입니다.
 
-다음과 같은 예시를 들어보겠습니다.
 
+다음과 같은 예시를 들어보겠습니다.  
 A지번의 재고를 B지번으로 옮기기 위해 우선 A지번의 재고를 차감한다고 가정해보겠습니다.
 
 - A지번에는 10개의 재고가 존재한다.
 - 재고를 옮기는 사용자는 여러명이다.
 
 
-## 분산락 테스트 코드
+## 4. 테스트 시나리오를 검증해보자 
+
+테스트 시나리오1
+재고를 이동하기 위해 차감
+
+테스트 시나리오2
+동일한 발주코드를 n건 이상 동시에 수신해도 한개만 등록
