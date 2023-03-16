@@ -31,8 +31,7 @@ RMS에는 여러 동시성 문제를 가지고 있었습니다.
 
 분산락 구현은 `Redis, Mysql, Zookeeper` 등을 이용하면 모두 구현할 수 있습니다.  
 그 중 Redis를 선택한 이유는 우선적으로 팀에서 해당 기술스택을 사용중이어서 추가 인프라 구축이 필요 없다는 점이 컸습니다.  
-Mysql도 사용중이었지만 락을 사용하기 위해 별도의 커넥션 풀을 관리해야 하고 락에 관련된 부하를 RDS에서 받는다는점이 꺼려졌습니다.  
-결국 `Redis, Mysql` 모두 사용하고 있었지만 성능, 그리고 유지보수 측면에서도 Redis를 사용하는것이 더 효율적일것이라는 생각을 했습니다.
+Mysql도 사용중이었지만 락을 사용하기 위해 별도의 커넥션 풀을 관리해야 하고 락에 관련된 부하를 RDS에서 받는다는 점에서 Redis를 사용하는것이 더 효율적이라 생각되었습니다.  
 
 `Redisson` 은 일반적으로 쓰이는 `Lettuce` 와 비교했을때 여러 차이가 있습니다.  그중 `Redisson`을 선택한 가장 큰 이유는 다음과 같습니다.
 
@@ -53,7 +52,7 @@ Mysql도 사용중이었지만 락을 사용하기 위해 별도의 커넥션 �
 
 ## 3. 분산락을 보다 손쉽게 사용할 수는 없을까?
 
-분산락을 도입하며 보다 손쉽고 커스텀하게 사용할 수 없을까? 라는 고민을 시작으로 몇가지 규칙을 만들었습니다.  
+분산락을 도입하며 보다 손쉽고 효율적으로 사용할 수 없을까? 라는 고민을 시작으로 몇가지 규칙을 만들었습니다.  
 
 1. 분산락 처리 로직은 비즈니스 로직이 오염되지 않게 분리해서 사용한다.
 2. waitTime, leaseTime을 커스텀하게 지정 가능하다.
@@ -75,6 +74,9 @@ Redisson 라이브러리를 사용하기 위해 의존성을 추가합니다.
 
 __RedissonConfig.java__
 ```java
+/*
+ * RedissonClient Configuration
+ */
 @Configuration
 public class RedissonConfig {
     @Value("${spring.redis.host}")
@@ -134,7 +136,6 @@ public @interface DistributedLock {
 
 `DistributedLock` 어노테이션의 파라미터는 key는 필수값, 나머지 값들은 커스텀하게 설정할 수 있도록 작성했습니다.  
 
-
 __DistributedLockAop.java__
 ```java
 /**
@@ -170,7 +171,7 @@ public class DistributedLockAop {
             throw new InterruptedException();
         } finally {
             try {
-                rLock.unlock();
+                rLock.unlock();   // (4)
             } catch (IllegalMonitorStateException e) {
                 log.info("Redisson Lock Already UnLock {} {}",
                         kv("serviceName", method.getName()),
@@ -185,9 +186,10 @@ public class DistributedLockAop {
 다음은 `@DistributedLock` 어노테이션 선언시 수행되는 aop 클래스입니다.  
 `@DistributedLock` 어노테이션의 파라미터 값을 가져와 분산락 획득 시도 그리고 어노테이션이 선언된 메소드를 실행합니다.
 
-1) asd 
-2) asd
-3) asd
+1) 락의 이름으로 RLock 인스턴스를 가져온다.
+2) 정의된 waitTime까지 획득을 시도한다, 정의된 leaseTime이 지나면 잠금을 해제한다.
+3) DistributedLock 어노테이션이 선언된 메소드를 별도의 트랜잭션으로 실행한다.
+4) 어느 상황이던 종료시 락을 해제한다.
 
 여기서 주의해서 볼 부분은 `CustomSpringELParser` 와 `AopForTransaction` 클래스입니다.
 이 클래스들은 분산락 컴포넌트에서 어떤 역할을 맡고 있을까요??
@@ -248,7 +250,7 @@ public class ShipmentModel {
 }
 ```
 
-`SpringEL`을 사용하면 다음과 같이 Lock의 이름을 보다 자유롭게 전달할 수 있습니다.
+`Spring Expression Language`를 사용하면 다음과 같이 Lock의 이름을 보다 자유롭게 전달할 수 있습니다.
 
 
 __AopForTransaction.java__
@@ -272,20 +274,17 @@ public class AopForTransaction {
 왜 트랜잭션이 커밋되고 난 이후 락이 해제되어야 할까요?? 
 > 바로 동시성 환경에서 데이터의 정합성을 보장하기 위해서 입니다.
 
-
-동시성의 예제로 많이 사용되는 재고 차감을 예로 들어보겠습니다.  
-A지번의 재고를 B지번으로 옮기기 위해 우선 A지번의 재고를 차감한다고 가정해보겠습니다.
-
-- A지번에는 10개의 재고가 존재한다.
-- 재고를 옮기는 사용자는 여러명이다.
+쿠폰 발급을 예로 들어보겠습니다.  
+`KURLY0001` 라는 쿠폰 10개를 고객들에게 이벤트로 발급한다고 가정해보겠습니다. 이때 고객들은 쿠폰을 받기 위해 쿠폰받기 요청을 하게됩니다.  
+이 때, 락의 해제가 트랜잭션의 커밋보다 빨리 해제된다면 어떻게 동작할까요?
 
 
 ## 4. 테스트 시나리오를 검증해보자 
 
-테스트 시나리오1
-재고를 이동하기 위해 차감
+#### 1. 재고 차감 테스트 시나리오
+A라는 상품의 재고가 100개 존재합니다.
 
-테스트 시나리오2
+#### 2. 중복된 발주데이터 n건 수신
 동일한 발주코드를 n건 이상 동시에 수신해도 한개만 등록
 
 
