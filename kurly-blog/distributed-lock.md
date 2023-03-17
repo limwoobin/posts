@@ -274,15 +274,167 @@ public class AopForTransaction {
 왜 트랜잭션이 커밋되고 난 이후 락이 해제되어야 할까요?? 
 > 바로 동시성 환경에서 데이터의 정합성을 보장하기 위해서 입니다.
 
-쿠폰 발급을 예로 들어보겠습니다.  
-`KURLY0001` 라는 쿠폰 10개를 고객들에게 이벤트로 발급한다고 가정해보겠습니다. 이때 고객들은 쿠폰을 받기 위해 쿠폰받기 요청을 하게됩니다.  
-이 때, 락의 해제가 트랜잭션의 커밋보다 빨리 해제된다면 어떻게 동작할까요?
+동시성 예제로 자주 등장하는 재고 차감을 예로 들어보겠습니다.  
+A라는 상품의 재고가 100개 존재합니다. 여러명의 작업자들이 동시에 해당 재고를 사용한다고 가정해보겠습니다.  
+이 때, 락의 해제시점이 트랜잭션 커밋시점보다 빠르면 어떻게 동작할까요?
 
 
 ## 4. 테스트 시나리오를 검증해보자 
 
-#### 1. 재고 차감 테스트 시나리오
-A라는 상품의 재고가 100개 존재합니다.
+#### 1. 쿠폰 차감 테스트 시나리오
+`KURLY0001` 라는 쿠폰 10개를 고객들에게 이벤트로 발급한다고 가정해보겠습니다. 이때 고객들은 쿠폰을 받기 위해 쿠폰받기 요청을 하게됩니다.  
+
+__Coupon.java__
+```java
+@Entity
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Coupon {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    /*
+     * 사용 가능한 재고수량
+     */
+    private Long availableStock;
+
+    public Coupon(String name, Long availableStock) {
+        this.name = name;
+        this.availableStock = availableStock;
+    }
+
+    public static Coupon of(String name, Long availableStock) {
+        return new Coupon(name, availableStock);
+    }
+
+    public void decrease() {
+        validateStockCount();
+        this.availableStock -= 1;
+    }
+
+    private void validateStockCount() {
+        if (availableStock < 1) {
+            throw new IllegalArgumentException();
+        }
+    }
+}
+```
+
+__CouponDecreaseService.java__
+```java
+@Component
+@RequiredArgsConstructor
+public class CouponDecreaseService {
+    private final CouponRepository couponRepository;
+
+    @Transactional
+    public void couponDecrease(Long couponId) {
+        Coupon coupon = couponRepository.findById(couponId)
+                .orElseThrow(IllegalArgumentException::new);
+
+        coupon.decrease();
+    }
+
+    @DistributedLock(key = "#key")
+    public void couponDecrease(String key, Long couponId) {
+        Coupon coupon = couponRepository.findById(couponId)
+                .orElseThrow(IllegalArgumentException::new);
+
+        coupon.decrease();
+    }
+}
+```
+분산락이 있는 경우와 없는 경우 어떻게 동작하는지 확인해보기 위해 두개의 메소드를 선언했습니다.
+
+테스트 코드로 다음 예제를 검증해보겠습니다.
+
+__CouponDecreaseLockTest.java__
+```java
+@BeforeEach
+void setUp() {
+    coupon = new Coupon("KURLY0001", 100L);
+    couponRepository.save(coupon);
+}
+
+/**
+ * Feature: 쿠폰 차감 동시성 테스트
+ * Background
+ *     Given KURLY0001라는 이름의 쿠폰 50장이 등록되어 있음
+ * <p>
+ * Scenario: 50장의 쿠폰을 100명의 사용자가 발급 요청함
+ * <p>
+ * Then 쿠폰 개수보다 많은 사용자들의 요청이 오더라도 쿠폰 개수는 0미만으로 차감되지 않아야 함
+ */
+@Test
+void 쿠폰차감_분산락_적용_동시성100명_테스트() throws InterruptedException {
+    int numberOfThreads = 100;
+    ExecutorService executorService = Executors.newFixedThreadPool(32);
+    CountDownLatch latch = new CountDownLatch(numberOfThreads);
+
+    for (int i=0; i<numberOfThreads; i++) {
+        executorService.submit(() -> {
+            try {
+                // 분산락 적용 메소드 호출
+                couponDecreaseService.couponDecrease(coupon.getName(), coupon.getId());
+            } finally {
+                latch.countDown();
+            }
+        });
+    }
+
+    latch.await();
+
+    Coupon persistCoupon = couponRepository.findById(coupon.getId())
+            .orElseThrow(IllegalArgumentException::new);
+
+    assertThat(persistCoupon.getAvailableStock()).isZero();
+    System.out.println("잔여 쿠폰 갯수 = " + persistCoupon.getAvailableStock());
+}
+```
+
+![distributed-lock-image1](https://user-images.githubusercontent.com/28802545/227767148-9ffe9f23-ad3c-42a6-a2d2-fb0ab27f079f.png)
+
+100장의 쿠폰에 대해 100명이 동시에 요청한 경우 정확하게 쿠폰이 100명 모두에게 발급된 것을 확인할 수 있습니다.  
+만약 100명이 아닌 그 이상의 사용자가 발급을 요청하더라도 `validateStockCount` 에 의해서 발급에 실패하게 되겟죠??
+
+그럼 분산락이 적용되지 않는 버전의 테스트 코드를 호출해보겠습니다.
+
+__CouponDecreaseLockTest.java__
+```java
+@Test
+void 쿠폰차감_분산락_미적용_동시성100명_테스트() throws InterruptedException {
+    int numberOfThreads = 100;
+    ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
+    CountDownLatch latch = new CountDownLatch(numberOfThreads);
+
+    for (int i=0; i<numberOfThreads; i++) {
+        executorService.submit(() -> {
+            try {
+                // 분산락 미적용 메소드 호출
+                couponDecreaseService.couponDecrease(coupon.getId());
+            } finally {
+                latch.countDown();
+            }
+        });
+    }
+
+    latch.await();
+
+    Coupon persistCoupon = couponRepository.findById(coupon.getId())
+            .orElseThrow(IllegalArgumentException::new);
+
+    assertThat(persistCoupon.getAvailableStock()).isZero();
+    System.out.println("잔여 쿠폰 갯수 = " + persistCoupon.getAvailableStock());
+}
+```
+
+![distributed-lock-image2](https://user-images.githubusercontent.com/28802545/227767760-c617af31-0550-4953-87b8-acc882f073b2.png)
+
+100명이 동시에 발급을 요청했지만 100개의 쿠폰중 남은 쿠폰은 79개입니다.  
+락이 없다보니 동시에 요청이 왔을때 각자 읽은 쿠폰의 잔여갯수가 다르기에 결국 데이터의 정합성이 깨져버렸습니다.
 
 #### 2. 중복된 발주데이터 n건 수신
 동일한 발주코드를 n건 이상 동시에 수신해도 한개만 등록
