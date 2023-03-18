@@ -281,8 +281,12 @@ A라는 상품의 재고가 100개 존재합니다. 여러명의 작업자들이
 
 ## 4. 테스트 시나리오를 검증해보자 
 
+분산락은 다양한 경우에 쓰일 수 있습니다.  
+쿠폰 차감과 같이 한정된 수량을 제한하는 경우에도 쓰일 수 있고 동시에 들어오는 중복된 데이터를 거르는 용도로도 사용할 수 있습니다.  
+위 두가지 케이스에 대해 테스트 코드로 검증해보겠습니다.
+
 #### 1. 쿠폰 차감 테스트 시나리오
-`KURLY0001` 라는 쿠폰 10개를 고객들에게 이벤트로 발급한다고 가정해보겠습니다. 이때 고객들은 쿠폰을 받기 위해 쿠폰받기 요청을 하게됩니다.  
+`KURLY_001` 라는 쿠폰 100개를 고객들에게 이벤트로 발급한다고 가정해보겠습니다. 이때 100명의 고객들이 쿠폰을 받기 위해 쿠폰 발급 요청을 하게 됩니다.  
 
 __Coupon.java__
 ```java
@@ -304,10 +308,6 @@ public class Coupon {
     public Coupon(String name, Long availableStock) {
         this.name = name;
         this.availableStock = availableStock;
-    }
-
-    public static Coupon of(String name, Long availableStock) {
-        return new Coupon(name, availableStock);
     }
 
     public void decrease() {
@@ -338,8 +338,8 @@ public class CouponDecreaseService {
         coupon.decrease();
     }
 
-    @DistributedLock(key = "#key")
-    public void couponDecrease(String key, Long couponId) {
+    @DistributedLock(key = "#lockName")
+    public void couponDecrease(String lockName, Long couponId) {
         Coupon coupon = couponRepository.findById(couponId)
                 .orElseThrow(IllegalArgumentException::new);
 
@@ -355,14 +355,14 @@ __CouponDecreaseLockTest.java__
 ```java
 @BeforeEach
 void setUp() {
-    coupon = new Coupon("KURLY0001", 100L);
+    coupon = new Coupon("KURLY_001", 100L);
     couponRepository.save(coupon);
 }
 
 /**
  * Feature: 쿠폰 차감 동시성 테스트
  * Background
- *     Given KURLY0001라는 이름의 쿠폰 50장이 등록되어 있음
+ *     Given KURLY_001 라는 이름의 쿠폰 100장이 등록되어 있음
  * <p>
  * Scenario: 50장의 쿠폰을 100명의 사용자가 발급 요청함
  * <p>
@@ -374,10 +374,10 @@ void 쿠폰차감_분산락_적용_동시성100명_테스트() throws Interrupte
     ExecutorService executorService = Executors.newFixedThreadPool(32);
     CountDownLatch latch = new CountDownLatch(numberOfThreads);
 
-    for (int i=0; i<numberOfThreads; i++) {
+    for (int i = 0; i < numberOfThreads; i++) {
         executorService.submit(() -> {
             try {
-                // 분산락 적용 메소드 호출
+                // 분산락 적용 메소드 호출 (락의 key는 쿠폰의 name으로 설정)
                 couponDecreaseService.couponDecrease(coupon.getName(), coupon.getId());
             } finally {
                 latch.countDown();
@@ -410,7 +410,7 @@ void 쿠폰차감_분산락_미적용_동시성100명_테스트() throws Interru
     ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
     CountDownLatch latch = new CountDownLatch(numberOfThreads);
 
-    for (int i=0; i<numberOfThreads; i++) {
+    for (int i = 0; i < numberOfThreads; i++) {
         executorService.submit(() -> {
             try {
                 // 분산락 미적용 메소드 호출
@@ -436,9 +436,145 @@ void 쿠폰차감_분산락_미적용_동시성100명_테스트() throws Interru
 100명이 동시에 발급을 요청했지만 100개의 쿠폰중 남은 쿠폰은 79개입니다.  
 락이 없다보니 동시에 요청이 왔을때 각자 읽은 쿠폰의 잔여갯수가 다르기에 결국 데이터의 정합성이 깨져버렸습니다.
 
-#### 2. 중복된 발주데이터 n건 수신
-동일한 발주코드를 n건 이상 동시에 수신해도 한개만 등록
+#### 2. 중복된 발주데이터 동시 수신
+`KURLY_001` 라는 발주 데이터 10개가 서비스에 중복으로 수신되었다고 가정해보겠습니다.  
+시스템 상 중복발주는 허용하지 않습니다.
 
+__Purchase.java__
+```java
+@Entity
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Purchase {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String code;
+
+    public Purchase(String code) {
+        this.code = code;
+    }
+}
+```
+
+__PurchaseRegisterService.java__
+```java
+@Service
+@RequiredArgsConstructor
+public class PurchaseRegisterService {
+    private final PurchaseRepository purchaseRepository;
+
+    @DistributedLock(key = "#lockName")
+    public void register(String lockName, String code) {
+        boolean existsPurchase = purchaseRepository.existsByCode(code);
+        if (existsPurchase) {
+            throw new IllegalArgumentException();
+        }
+
+        Purchase purchase = new Purchase(code);
+        purchaseRepository.save(purchase);
+    }
+
+    @Transactional
+    public void register(String code) {
+        boolean existsPurchase = purchaseRepository.existsByCode(code);
+        if (existsPurchase) {
+            throw new IllegalArgumentException();
+        }
+
+        Purchase purchase = new Purchase(code);
+        purchaseRepository.save(purchase);
+    }
+}
+```
+발주 등록시 중복발주에 대한 `validation logic`을 수행합니다.  
+그리고 분산락이 있는 경우와 없는 경우 어떻게 동작하는지 확인해보기 위해 두개의 메소드를 선언했습니다.  
+
+__PurchaseRegisterLockTest.java__
+```java
+/**
+ * Feature: 발주 등록 동시성 테스트
+ * <p>
+ * Scenario: KURLY_001 라는 이름의 발주 10개가 동시에 등록 요청됨
+ * <p>
+ * Then 중복된 발주 10개가 동시에 들어오더라도 한 건만 정상 등록 되어야 함
+ */
+@Test
+void 발주등록_분산락_적용_테스트() throws InterruptedException {
+    String 발주_코드 = "KURLY_001";
+
+    int numberOfThreads = 10;
+    ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
+    CountDownLatch latch = new CountDownLatch(numberOfThreads);
+
+    for (int i = 0; i < numberOfThreads; i++) {
+        executorService.submit(() -> {
+            try {
+                // 분산락 적용 메소드 호출
+                purchaseRegisterService.register(발주_코드, 발주_코드);
+            } finally {
+                latch.countDown();
+            }
+        });
+    }
+
+    latch.await();
+
+    Long totalCount = purchaseRepository.countByCode(발주_코드);
+
+    System.out.println("등록된 발주 = " + totalCount);
+    assertThat(totalCount).isOne();
+}
+```
+
+![distributed-lock-image3](https://user-images.githubusercontent.com/28802545/227771387-addd7032-0d5c-4868-a898-742ee74c92c3.png)
+
+분산락이 적용된 버전의 메소드에 대한 테스트 결과입니다.
+10건의 요청이 들어와도 정상적으로 한 건의 발주만 등록된 것을 확인할 수 있습니다.
+
+그럼 분산락 미적용 버전의 메소드를 확인해보겠습니다.
+
+```java
+@Test
+void 발주등록_분산락_미적용_테스트() throws InterruptedException {
+    String 발주_코드 = "KURLY_001";
+
+    int numberOfThreads = 10;
+    ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
+    CountDownLatch latch = new CountDownLatch(numberOfThreads);
+
+    for (int i = 0; i < numberOfThreads; i++) {
+        executorService.submit(() -> {
+            try {
+                // 분산락 미적용 메소드 호출
+                purchaseRegisterService.register(발주_코드);
+            } finally {
+                latch.countDown();
+            }
+        });
+    }
+
+    latch.await();
+
+    Long totalCount = purchaseRepository.countByCode(발주_코드);
+
+    System.out.println("등록된 발주 = " + totalCount);
+    assertThat(totalCount).isOne();
+}
+```
+
+![distributed-lock-image4](https://user-images.githubusercontent.com/28802545/227771505-e7fdbcc5-413b-470e-94a5-ccc43ecb5e9b.png)
+
+메소드에 작성된 `validation logic`에 예외가 걸리지 않고 모두 등록되었습니다.(등록 개수는 테스트마다 그리고 테스트 환경의 connection pool size에 따라 다를 수 있습니다)  
+이렇게 분산락의 유무에 따라 시스템이 어떻게 동작하는지 테스트 코드로 검증해보았습니다.
+
+## 5. 마치며
+
+여기까지 입고서비스팀에서 동시성 환경에서 분산락 컴포넌트를 사용하는 방법에 대해 소개해드렸습니다.
+이렇게 한 층 더 수준높은 락 처리를 할 수 있게 되었고, 분산락 사용에 대해 생산성도 올라가고 핵심 로직과도 분리해 사용할 수 있어 가독성 측면에서도 훨씬 수월하게 사용할 수 있습니다.
+
+지금까지 읽어주셔서 감사합니다~
 
 ### Reference
 https://www.baeldung.com/redis-redisson
