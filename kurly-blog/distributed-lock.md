@@ -47,7 +47,7 @@ Mysql도 사용 중이었지만 락을 사용하기 위해 별도의 커넥션 �
 `Lettuce`는 분산락 구현 시 `setnx`, `setex`과 같은 명령어를 이용해 지속적으로 Redis에게 락이 해제되었는지 요청을 보내는 스핀락 방식으로 동작합니다. 요청이 많을수록 Redis가 밭는 부하는 커지게 됩니다.  
 이에 비해 `Redisson`은 Pub/Sub 방식을 이용하기에 락이 해제되면 락을 subscribe 하는 클라이언트는 락이 해제되었다는 신호를 받고 락 획득을 시도하게 됩니다. 
 
-![distributed-lock-image1](https://user-images.githubusercontent.com/28802545/228097692-cb291948-8a4f-4ac9-a7b7-dcff59a4f191.png)
+![distributed-lock-image1](/post-img/distributed-redisson-lock/distributed-lock-image-1.png)
 
 자세한 내용이 궁금하시다면 아래 링크를 참고해보시길 추천드립니다.
 
@@ -283,7 +283,7 @@ public class AopForTransaction {
 A라는 상품의 재고가 10개 존재합니다. 여러 명의 작업자들이 동시에 해당 재고를 사용한다고 가정해 보겠습니다.  
 이때, 락의 해제 시점이 트랜잭션 커밋 시점보다 빠르면 어떻게 동작할까요?
 
-![distributed-lock-image2](https://user-images.githubusercontent.com/28802545/227985959-556d3881-319b-4cc0-a1ca-d32e427ca8d5.png)
+![distributed-lock-image2](/post-img/distributed-redisson-lock/distributed-lock-image-2.png)
 
 1) Client1, Client2 두 사용자가 재고 차감을 위해 메서드에 동시에 접근한다.  
 2) Client1이 간발의 차이로 락을 먼저 선점하고 재고를 조회하여 현재 재고가 10인 것을 확인한다.  
@@ -296,7 +296,7 @@ A라는 상품의 재고가 10개 존재합니다. 여러 명의 작업자들이
 
 반대로 트랜잭션 커밋 이후 락을 해제하면 어떻게 될까요? 그림을 통해 확인해 보겠습니다.
 
-![distributed-lock-image3](https://user-images.githubusercontent.com/28802545/227988108-adcb807c-459d-45b3-ba9f-62a30d91f5f7.png)
+![distributed-lock-image3](/post-img/distributed-redisson-lock/distributed-lock-image-3.png)
 
 1) Client1, Client2 두 사용자가 재고 차감을 위해 메서드에 동시에 접근한다.  
 2) Client1이 간발의 차이로 락을 먼저 선점하고 재고를 조회하여 현재 재고가 10인 것을 확인한다.  
@@ -423,7 +423,7 @@ void 쿠폰차감_분산락_적용_동시성100명_테스트() throws Interrupte
 }
 ```
 
-![distributed-lock-image4](https://user-images.githubusercontent.com/28802545/227767148-9ffe9f23-ad3c-42a6-a2d2-fb0ab27f079f.png)
+![distributed-lock-image4](/post-img/distributed-redisson-lock/distributed-lock-image-4.png)
 
 100장의 쿠폰에 대해 100명이 동시에 요청한 경우 정확하게 쿠폰이 100명 모두에게 발급된 것을 확인할 수 있습니다.  
 만약 100명이 아닌 그 이상의 사용자가 발급을 요청하더라도 `validateStockCount` 에 의해서 발급에 실패하겟죠??
@@ -459,7 +459,7 @@ void 쿠폰차감_분산락_미적용_동시성100명_테스트() throws Interru
 }
 ```
 
-![distributed-lock-image5](https://user-images.githubusercontent.com/28802545/227767760-c617af31-0550-4953-87b8-acc882f073b2.png)
+![distributed-lock-image5](/post-img/distributed-redisson-lock/distributed-lock-image-5.png)
 
 100명이 동시에 발급을 요청했지만 100개의 쿠폰 중 남은 쿠폰은 79개입니다.  
 락이 없다 보니 동시에 요청이 왔을 때 각자 읽은 쿠폰의 잔여갯수가 다르기에 결국 데이터의 정합성이 깨져버렸습니다.
@@ -556,7 +556,7 @@ void 발주등록_분산락_적용_테스트() throws InterruptedException {
 }
 ```
 
-![distributed-lock-image6](https://user-images.githubusercontent.com/28802545/227771387-addd7032-0d5c-4868-a898-742ee74c92c3.png)
+![distributed-lock-image6](/post-img/distributed-redisson-lock/distributed-lock-image-6.png)
 
 분산락이 적용된 버전의 메서드에 대한 테스트 결과입니다.
 10건의 요청이 들어와도 정상적으로 한 건의 발주만 등록된 것을 확인할 수 있습니다.
@@ -592,19 +592,19 @@ void 발주등록_분산락_미적용_테스트() throws InterruptedException {
 }
 ```
 
-![distributed-lock-image7](https://user-images.githubusercontent.com/28802545/227771505-e7fdbcc5-413b-470e-94a5-ccc43ecb5e9b.png)
+![distributed-lock-image7](/post-img/distributed-redisson-lock/distributed-lock-image-7.png)
 
-메서드에 작성된 `validation logic`에 예외가 걸리지 않고 모두 등록되었습니다.(등록 개수는 테스트마다 그리고 테스트 환경의 connection pool size에 따라 다를 수 있습니다)  
+메서드에 작성된 `validation logic`에 예외가 걸리지 않고 모두 등록되었습니다.  (등록 개수는 테스트마다 그리고 테스트 환경의 connection pool size에 따라 다를 수 있습니다)  
 이렇게 분산락의 유무에 따라 시스템이 어떻게 동작하는지 테스트 코드로 검증해 보았습니다.
 
 ## 5. 마치며
 
-여기까지 입고서비스팀에서 동시성 환경에서 분산락 컴포넌트를 사용하는 방법에 대해 소개해 드렸습니다.
-이렇게 한 층 더 수준 높은 락 처리를 할 수 있게 되었고, 분산락 사용에 대해 생산성도 올라가고 핵심 로직과도 분리해 사용할 수 있어 가독성 측면에서도 훨씬 수월하게 사용할 수 있습니다.
+여기까지 입고서비스팀에서 동시성 환경에서 분산락 컴포넌트를 사용하는 방법에 대해 소개해 드렸습니다.  
+분산락을 도입하며 한 층 더 수준 높은 락 처리를 할 수 있게 되었고, 락 사용에 대해 생산성도 올라가고 핵심 로직과도 분리해 사용할 수 있어 가독성 측면에서도 훨씬 수월하게 사용할 수 있었습니다.
 
 지금까지 읽어주셔서 감사합니다~
 
-## Reference
+### Reference
 
 [https://www.baeldung.com/redis-redisson](https://www.baeldung.com/redis-redisson)  
 [https://github.com/redisson/redisson](https://github.com/redisson/redisson )  
