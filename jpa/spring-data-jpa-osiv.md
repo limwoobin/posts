@@ -340,12 +340,189 @@ __JpaWebConfiguration.java__
 
 그러면 __`OpenEntityManagerInViewInterceptor.java`__ 내부를 한번 살펴보겠습니다.
 
+#### __preHandle__
 
+컨트롤러가 실행되기 전에 호출됨
 
+```java
+@Override
+public void preHandle(WebRequest request) throws DataAccessException {
+  String key = getParticipateAttributeName();
+  WebAsyncManager asyncManager = WebAsyncUtils.getAsyncManager(request);
+  if (asyncManager.hasConcurrentResult() && applyEntityManagerBindingInterceptor(asyncManager, key)) {
+    return;
+  }
+
+  EntityManagerFactory emf = obtainEntityManagerFactory();
+  if (TransactionSynchronizationManager.hasResource(emf)) {
+    // Do not modify the EntityManager: just mark the request accordingly.
+    Integer count = (Integer) request.getAttribute(key, WebRequest.SCOPE_REQUEST);
+    int newCount = (count != null ? count + 1 : 1);
+    request.setAttribute(getParticipateAttributeName(), newCount, WebRequest.SCOPE_REQUEST);
+  }
+  else {
+    logger.debug("Opening JPA EntityManager in OpenEntityManagerInViewInterceptor");
+    try {
+      EntityManager em = createEntityManager();  // (1)
+      EntityManagerHolder emHolder = new EntityManagerHolder(em);  // (2)
+      TransactionSynchronizationManager.bindResource(emf, emHolder);  // (3)
+
+      AsyncRequestInterceptor interceptor = new AsyncRequestInterceptor(emf, emHolder);
+      asyncManager.registerCallableInterceptor(key, interceptor);
+      asyncManager.registerDeferredResultInterceptor(key, interceptor);
+    }
+    catch (PersistenceException ex) {
+      throw new DataAccessResourceFailureException("Could not create JPA EntityManager", ex);
+    }
+  }
+}
+```
+
+해당 메소드에서 숫자로 마킹한 부분을 보면 컨트롤러 호출 전에 `EntityManager` 를 생성하고 바인딩하는것을 확인할 수 있습니다. 이 시점에 영속성 컨텍스트가 생성되게 됩니다.
+
+(1). `EntityManager` 생성, `EntityManagerHolder` 생성  
+(2). `TransactionSynchronizationManager` 에 `EntityManager` 바인딩  
+
+##### __TransactionSynchronizationManager__: Transaction 은 Connection 단위로 이루어지는데 이때 쓰레드로컬에서 트랜잭션을 Connection 단위로 사용할 수 있게 하는 클래스
 
 <br />
 
+#### __afterCompletion__
 
+View 가 렌더링 된 이후에 호출
+
+```java
+@Override
+	public void afterCompletion(WebRequest request, @Nullable Exception ex) throws DataAccessException {
+		if (!decrementParticipateCount(request)) {
+			EntityManagerHolder emHolder = (EntityManagerHolder)
+					TransactionSynchronizationManager.unbindResource(obtainEntityManagerFactory());  // (1)
+			logger.debug("Closing JPA EntityManager in OpenEntityManagerInViewInterceptor");
+			EntityManagerFactoryUtils.closeEntityManager(emHolder.getEntityManager());  // (2)
+		}
+	}
+```
+
+afterCompletion Method 에서 영속성 컨텍스트를 종료하는것을 확인할 수 있습니다.
+
+(1). `TransactionSynchronizationManager` 에서 `EntityManager` 바인딩 해제  
+(2). `EntityManager` 종료
+
+<br />
+
+### 영속성 컨텍스트와 `Transaction` 의 관계
+
+일반적으로 `EntityManager` 와 `Transaction` 의 라이프사이클은 같은 라이프사이클을 가지게 됩니다.  
+다만 OSIV 를 사용하지 않는 경우에는 `Transaction` 은 `@Transaction` 을 선언한 객체/메소드의 라이프사이클까지만 유지되고 해당 시점에 영속성 컨텍스트도 같이 종료됩니다.  
+
+OSIV 를 사용하는 경우에는 얘기가 조금 달라집니다.  
+`@Transaction` 을 서비스 레이어에 선언했다고 가정하면 `Transaction` 은 서비스 레이어가 종료되면서 같이 종료되지만 영속성 컨텍스트는 View 레이어까지 남아있게 됩니다.
+
+트랜잭션이 종료될때 호출되는 __`JpaTransactionManager.java`__ 의 `doCleanupAfterCompletion` 메소드를 한번 간략하게 살펴보겠습니다.
+
+__`JpaTransactionManager.java`__
+```java
+@Override
+protected void doCleanupAfterCompletion(Object transaction) {
+  // ... (생략)
+
+  // Remove the entity manager holder from the thread.
+  if (txObject.isNewEntityManagerHolder()) {
+    EntityManager em = txObject.getEntityManagerHolder().getEntityManager();
+    if (logger.isDebugEnabled()) {
+      logger.debug("Closing JPA EntityManager [" + em + "] after transaction");
+    }
+    EntityManagerFactoryUtils.closeEntityManager(em);
+  }
+  else {
+    logger.debug("Not closing pre-bound JPA EntityManager after transaction");
+  }
+}
+```
+
+`isNewEntityManagerHolder()` 를 통해 OSIV 옵션을 판단하게 됩니다.  
+만약 true 라면 OSIV 는 false 이기에 `EntityManager` 도 같이 종료하게 됩니다.  
+
+그렇다면 어떻게 저 시점에 OSIV 의 설정을 판단할 수 있는걸까요?  
+
+<br />
+
+이번엔 트랜잭션이 시작될때 호출되는 __`JpaTransactionManager.java`__ 의 `doGetTransaction` 메소드를 한번 살펴보겠습니다.
+
+__`JpaTransactionManager.java`__
+```java
+@Override
+protected Object doGetTransaction() {
+  JpaTransactionObject txObject = new JpaTransactionObject();
+  txObject.setSavepointAllowed(isNestedTransactionAllowed());
+
+  EntityManagerHolder emHolder = (EntityManagerHolder)
+      TransactionSynchronizationManager.getResource(obtainEntityManagerFactory());
+  if (emHolder != null) {
+    if (logger.isDebugEnabled()) {
+      logger.debug("Found thread-bound EntityManager [" + emHolder.getEntityManager() +
+          "] for JPA transaction");
+    }
+    txObject.setEntityManagerHolder(emHolder, false); // (1)
+  }
+
+  if (getDataSource() != null) {
+    ConnectionHolder conHolder = (ConnectionHolder)
+        TransactionSynchronizationManager.getResource(getDataSource());
+    txObject.setConnectionHolder(conHolder);
+  }
+
+  return txObject;
+}
+```
+
+(1) 의 `emHolder != null` 이라면 __`txObject.setEntityManagerHolder(emHolder, false);`__ 를 호출하는것이 보이시나요?
+
+일반적인 트랜잭션 생성시점에는 `EntityManagerHolder` 는 존재할 일이 없을텐데 존재한다는것은 OSIV 가 활성화 되어있어 인터셉터의 `preHandle` 호출 시점에 생성되었다고 볼 수 있습니다.  
+
+그럼 __`txObject.setEntityManagerHolder(emHolder, false);`__ 내부를 들어가보겠습니다.
+
+```java
+// ... 생략
+private class JpaTransactionObject extends JdbcTransactionObjectSupport {
+
+  @Nullable
+  private EntityManagerHolder entityManagerHolder;
+  private boolean newEntityManagerHolder;
+
+  public void setEntityManagerHolder(
+      @Nullable EntityManagerHolder entityManagerHolder, boolean newEntityManagerHolder) {
+
+    this.entityManagerHolder = entityManagerHolder;
+    this.newEntityManagerHolder = newEntityManagerHolder;
+  }
+
+  public boolean isNewEntityManagerHolder() {
+    return this.newEntityManagerHolder;
+  }
+
+  // ... 생략
+```
+
+__`txObject.setEntityManagerHolder(emHolder, false);`__ 를 호출하게 되면 EntityManagerHolder 는 그대로 주입되고, `newEntityManagerHolder` 는 false 로 할당되게 됩니다.  
+
+그리고 위에서 트랜잭션 종료시점에 봤던 OSIV 를 판단하는 `isNewEntityManagerHolder` 메소드가 보이네요.  
+결국 `isNewEntityManagerHolder` 는 트랜잭션 생성시점에 `EntityManagerHolder` 존재유무를 가지고 OSIV 설정을 판단하여 값이 할당되게 됩니다.  
+
+이제 트랜잭션 종료시 왜 `isNewEntityManagerHolder` 를 이용해 `EntityManager` 를 종료할지 말지 판단하는지 이해가 되었습니다.
+
+<br />
+
+### OSIV 주의사항
+
+OSIV 를 사용하게 되면 컨트롤러까지 데이터베이스 커넥션을 물고있어서 성능상 안좋은 점이 존재할 수 있습니다.  
+이외에도 Entity 를 컨트롤러까지 유지하는것은 내부 도메인 레이어와 프레젠테이션 레이어와의 의존관계가 강하게 결합되었다고 볼 수 있습니다.
+
+저의 경우에도 프레젠테이션 레이어에서는 DTO 객체로 변환해서 사용하기에 직접 OSIV 는 비활성화를 하고 사용하는 편이긴 합니다.
+
+하지만 정답은 없는것이기에 여러 고민들과 우선순위에 맞게 선택하는것이 가장 좋다고 생각합니다.
+
+감사합니다.
 
 <br />
 
@@ -355,3 +532,4 @@ __JpaWebConfiguration.java__
 - https://spring.io/guides/gs/graphql-server/  
 - https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/orm/hibernate5/support/OpenSessionInViewInterceptor.html
 - https://junhyunny.github.io/spring-mvc/jpa/open-session-in-view/
+- https://brunch.co.kr/@anonymdevoo/58
