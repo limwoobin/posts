@@ -271,45 +271,45 @@ OSIV 의 동작원리를 알아보기 전에 설정을 다시 한번 확인해�
 __JpaWebConfiguration.java__
 ```java
 @Configuration(proxyBeanMethods = false)
-	@ConditionalOnWebApplication(type = Type.SERVLET)
-	@ConditionalOnClass(WebMvcConfigurer.class)
-	@ConditionalOnMissingBean({ OpenEntityManagerInViewInterceptor.class, OpenEntityManagerInViewFilter.class })
-	@ConditionalOnMissingFilterBean(OpenEntityManagerInViewFilter.class)
-	@ConditionalOnProperty(prefix = "spring.jpa", name = "open-in-view", havingValue = "true", matchIfMissing = true)
-	protected static class JpaWebConfiguration {
+@ConditionalOnWebApplication(type = Type.SERVLET)
+@ConditionalOnClass(WebMvcConfigurer.class)
+@ConditionalOnMissingBean({ OpenEntityManagerInViewInterceptor.class, OpenEntityManagerInViewFilter.class })
+@ConditionalOnMissingFilterBean(OpenEntityManagerInViewFilter.class)
+@ConditionalOnProperty(prefix = "spring.jpa", name = "open-in-view", havingValue = "true", matchIfMissing = true)
+protected static class JpaWebConfiguration {
 
-		private static final Log logger = LogFactory.getLog(JpaWebConfiguration.class);
+  private static final Log logger = LogFactory.getLog(JpaWebConfiguration.class);
 
-		private final JpaProperties jpaProperties;
+  private final JpaProperties jpaProperties;
 
-		protected JpaWebConfiguration(JpaProperties jpaProperties) {
-			this.jpaProperties = jpaProperties;
-		}
+  protected JpaWebConfiguration(JpaProperties jpaProperties) {
+    this.jpaProperties = jpaProperties;
+  }
 
-		@Bean
-		public OpenEntityManagerInViewInterceptor openEntityManagerInViewInterceptor() {
-			if (this.jpaProperties.getOpenInView() == null) {
-				logger.warn("spring.jpa.open-in-view is enabled by default. "
-						+ "Therefore, database queries may be performed during view "
-						+ "rendering. Explicitly configure spring.jpa.open-in-view to disable this warning");
-			}
-			return new OpenEntityManagerInViewInterceptor();
-		}
+  @Bean
+  public OpenEntityManagerInViewInterceptor openEntityManagerInViewInterceptor() {
+    if (this.jpaProperties.getOpenInView() == null) {
+      logger.warn("spring.jpa.open-in-view is enabled by default. "
+          + "Therefore, database queries may be performed during view "
+          + "rendering. Explicitly configure spring.jpa.open-in-view to disable this warning");
+    }
+    return new OpenEntityManagerInViewInterceptor();
+  }
 
-		@Bean
-		public WebMvcConfigurer openEntityManagerInViewInterceptorConfigurer(
-				OpenEntityManagerInViewInterceptor interceptor) {
-			return new WebMvcConfigurer() {
+  @Bean
+  public WebMvcConfigurer openEntityManagerInViewInterceptorConfigurer(
+      OpenEntityManagerInViewInterceptor interceptor) {
+    return new WebMvcConfigurer() {
 
-				@Override
-				public void addInterceptors(InterceptorRegistry registry) {
-					registry.addWebRequestInterceptor(interceptor);
-				}
+      @Override
+      public void addInterceptors(InterceptorRegistry registry) {
+        registry.addWebRequestInterceptor(interceptor);
+      }
 
-			};
-		}
+    };
+  }
 
-	}
+}
 ```
 
 <br />
