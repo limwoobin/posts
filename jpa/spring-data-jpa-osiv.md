@@ -5,9 +5,10 @@
 ## **OSIV(Open Session In View) 동작원리 및 주의사항**
 
 이번엔 JPA/Hibernate 에서 사용되는 개념인 OSIV(Open Session In View) 에 대해 알아보겠습니다.  
-OSIV 는 영속성 컨텍스트를 View 영역까지 열어둔다는 기능입니다. 즉, View 레이어에서도 지연로딩과 같은 영속성 컨텍스트의 특징을 사용할 수 있다는 이야기입니다.
+OSIV 는 영속성 컨텍스트를 View 영역까지 열어둔다는 기능입니다.  
+즉, View 레이어에서도 지연로딩과 같은 영속성 컨텍스트의 특징을 사용할 수 있다는 이야기입니다.
 
-`Spring Boot` 에서의 OSIV 는 기본적으로 활성상태입니다. 그리고 default 로 어플리케이션을 실행하게 되면 다음과 같은 경고메시지를 만나볼 수 있습니다.
+`Spring Boot` 에서의 OSIV 는 기본적으로 활성화된 상태입니다. 그리고 설정을 명시하지 않고 default 로 어플리케이션을 실행하게 되면 다음과 같은 경고메시지를 만나볼 수 있습니다.
 
 ![osiv-image-6](https://user-images.githubusercontent.com/28802545/289344266-ae527a8a-111e-44c6-8eff-a59c22d402ef.png)
 
@@ -30,10 +31,11 @@ OSIV 를 사용하지 않기 위해서는 아래와 같이 명시적으로 설�
 #### __https://github.com/spring-projects/spring-boot/issues/7107__
 
 <br />
+<hr>
+
+간단한 예제 코드를 통해 OSIV 가 정말로 잘 동작하는지 한번 확인해보겠습니다. 
 
 ### OISV - RestAPI Controller 예제
-
-간단한 예제 코드를 작성하여 OSIV 가 정말로 잘 동작하는지 한번 확인해보겠습니다. 
 
 __Team.java__
 ```java
@@ -249,9 +251,9 @@ query teams {
 
 ![osiv-image-5](https://user-images.githubusercontent.com/28802545/287432179-9e25d3b1-4bea-45f5-a1a0-42bf4cb48091.png)
 
-그렇다면 `RestAPI, GraphQL` 로 API를 호출한것과 `Kafka Consumer` 로 메시지를 소비한것.  
-둘 사이에 어떤 차이가 있어서 OSIV 동작의 유무를 판단하는 것일까요?  
-OSIV 의 동작원리에 대해 조금 더 자세하 알아보아야 할 것 같습니다.
+그렇다면 `RestAPI, GraphQL` 로 API를 호출한것과 `Kafka Consumer` 에서 메시지를 읽어온 것.  
+둘 사이에 어떤 차이가 있어서 OSIV 동작에 차이가 발생하는걸까요?  
+OSIV 의 동작원리에 대해 더 자세히 알아보아야 할 것 같습니다.
 
 <br />
 
@@ -334,15 +336,13 @@ __JpaWebConfiguration.java__
 이후 Bean 이 등록되면 __`OpenEntityManagerInViewInterceptor.java`__ 는  
 `preHandle(), postHandle(), afterCompletion()` 메소드에서 `WebRequest.java` 을 인자로 받아 처리합니다.  
 
-그래서 OSIV 가 `RestAPI, GraphQL` 요청시에는 인터셉터가 존재하였기에 정상동작했지만, `Kafka Consumer` 에서는 해당 인터셉터가 실행되지 않기때문에 OSIV 가 동작하지 않았던 것입니다.
+`RestAPI, GraphQL` 요청시에는 컨트롤러를 통해 요청이 들어오기 때문에 인터셉터가 존재하여 정상동작했지만, `Kafka Consumer` 에서는 해당 인터셉터가 없기때문에 OSIV 가 동작하지 않았던 것입니다.
 
 <br />
 
 그러면 __`OpenEntityManagerInViewInterceptor.java`__ 내부를 한번 살펴보겠습니다.
 
-#### __preHandle__
-
-컨트롤러가 실행되기 전에 호출됨
+#### __preHandle__ - 컨트롤러가 실행되기 전에 호출됨
 
 ```java
 @Override
@@ -387,9 +387,7 @@ public void preHandle(WebRequest request) throws DataAccessException {
 
 <br />
 
-#### __afterCompletion__
-
-View 가 렌더링 된 이후에 호출
+#### __afterCompletion__ - View 가 렌더링 된 이후에 호출
 
 ```java
 @Override
@@ -403,7 +401,7 @@ View 가 렌더링 된 이후에 호출
 	}
 ```
 
-afterCompletion Method 에서 영속성 컨텍스트를 종료하는것을 확인할 수 있습니다.
+afterCompletion 에서 영속성 컨텍스트를 종료하는것을 확인할 수 있습니다.
 
 (1). `TransactionSynchronizationManager` 에서 `EntityManager` 바인딩 해제  
 (2). `EntityManager` 종료
@@ -412,11 +410,9 @@ afterCompletion Method 에서 영속성 컨텍스트를 종료하는것을 확�
 
 ### 영속성 컨텍스트와 `Transaction` 의 관계
 
-일반적으로 `EntityManager` 와 `Transaction` 의 라이프사이클은 같은 라이프사이클을 가지게 됩니다.  
-다만 OSIV 를 사용하지 않는 경우에는 `Transaction` 은 `@Transaction` 을 선언한 객체/메소드의 라이프사이클까지만 유지되고 해당 시점에 영속성 컨텍스트도 같이 종료됩니다.  
-
-OSIV 를 사용하는 경우에는 얘기가 조금 달라집니다.  
-`@Transaction` 을 서비스 레이어에 선언했다고 가정하면 `Transaction` 은 서비스 레이어가 종료되면서 같이 종료되지만 영속성 컨텍스트는 View 레이어까지 남아있게 됩니다.
+OSIV 를 사용하지 않는 경우에는 `EntityManager` 와 `Transaction` 은 같은 라이프 사이클을 가지게 됩니다.  
+`Transaction` 이 종료되면서 영속성 컨텍스트도 같이 종료하기 때문이죠.  
+다만 OSIV 를 사용하는 경우에는 `Transaction` 은 `@Transaction` 을 선언한 객체/메소드까지만 라이프 사이클이 유지되고 영속성 컨텍스트는 View 영역까지 살아있습니다.
 
 트랜잭션이 종료될때 호출되는 __`JpaTransactionManager.java`__ 의 `doCleanupAfterCompletion` 메소드를 한번 간략하게 살펴보겠습니다.
 
@@ -440,10 +436,12 @@ protected void doCleanupAfterCompletion(Object transaction) {
 }
 ```
 
-`isNewEntityManagerHolder()` 를 통해 OSIV 옵션을 판단하게 됩니다.  
-만약 true 라면 OSIV 는 false 이기에 `EntityManager` 도 같이 종료하게 됩니다.  
+`isNewEntityManagerHolder()` 를 통해 OSIV 옵션을 판단합니다.  
+만약 `isNewEntityManagerHolder()` 이 `true` 라면 OSIV 는 비활성화 상태이기에 `EntityManager` 도 같이 종료되게 됩니다.  
 
-그렇다면 어떻게 저 시점에 OSIV 의 설정을 판단할 수 있는걸까요?  
+`isNewEntityManagerHolder()` 이 `false` 였다면 `logger.debug("Not closing pre-bound JPA EntityManager after transaction");` 로그만 출력하고 `EntityManager` 는 종료되지 않습니다.
+
+그렇다면 어떻게 저 시점에 OSIV 의 설정을 판단할 수 있는걸까요? 트랜잭션이 시작될때의 설정을 보면 알 수 있습니다.
 
 <br />
 
@@ -512,13 +510,14 @@ __`txObject.setEntityManagerHolder(emHolder, false);`__ 를 호출하게 되면 
 이제 트랜잭션 종료시 왜 `isNewEntityManagerHolder` 를 이용해 `EntityManager` 를 종료할지 말지 판단하는지 이해가 되었습니다.
 
 <br />
+<hr>
 
 ### OSIV 주의사항
 
 OSIV 를 사용하게 되면 컨트롤러까지 데이터베이스 커넥션을 물고있어서 성능상 안좋은 점이 존재할 수 있습니다.  
 이외에도 Entity 를 컨트롤러까지 유지하는것은 내부 도메인 레이어와 프레젠테이션 레이어와의 의존관계가 강하게 결합되었다고 볼 수 있습니다.
 
-저의 경우에도 프레젠테이션 레이어에서는 DTO 객체로 변환해서 사용하기에 직접 OSIV 는 비활성화를 하고 사용하는 편이긴 합니다.
+저의 경우에도 프레젠테이션 레이어에서는 DTO 객체로 변환해서 사용하기에 OSIV 는 비활성화로 사용하는 편이긴 합니다.
 
 하지만 정답은 없는것이기에 여러 고민들과 우선순위에 맞게 선택하는것이 가장 좋다고 생각합니다.
 
