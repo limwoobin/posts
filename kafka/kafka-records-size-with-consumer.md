@@ -133,16 +133,83 @@ __`max.poll.records`__ 설정이 __`MessageListener`__ 에서는 동작하지 �
 
 이번에는 컨슈머에서 레코드를 __`polling()`__ 하는 과정을 한번 따라가보겠습니다.
 
+<br />
+
 ## __Consumer Polling__
+
+카프카 컨슈머는 크게 다음과 같은 구성요소로 이루어져 있습니다.
+
+![kafka-record-image-6](https://user-images.githubusercontent.com/28802545/292726676-be3059ad-4d4e-48bb-a4d4-8f67888a2985.png)
+
+<br />
+
+컨슈머는 메시지를 가져올때 주기적으로 브로커에게 __`poll()`__ 메소드를 통해서 데이터를 가져오고 있습니다.  
+주기적으로 `polling` 하는곳을 먼저 찾아가 보겠습니다.  
+
+1. __KafkaMessageListenerContainer.java__
+
+    ![kafka-record-image-7](https://user-images.githubusercontent.com/28802545/292733327-134f61c8-e35c-487b-9db1-df0a6fd88445.png)
+
+    <br />
+
+    `KafkaMessageListenerContainer` 의 run 메소드를 살펴보면 무한루프를 돌면서 주기적으로 __`pollAndInvoke()`__ 를 이용해 주기적으로 메시지를 `polling` 하고 있습니다.
+
+    <br />
+
+    ![kafka-record-image-8](https://user-images.githubusercontent.com/28802545/292733486-72fa6b48-bfa6-4e59-b424-f2d9a83721b2.png)
+
+    <br />
+
+    그리고 `doPoll()` 메소드를 통해 `ConsumerRecord` 로 메시지를 읽어 가져옵니다.  
+    그럼 한번 `doPoll` 메소드를 살펴보겠습니다.
+
+    <br />
+
+    ![kafka-record-image-9](https://user-images.githubusercontent.com/28802545/292735186-f99e7fc2-ae69-4ecb-a95f-a34e96ce7458.png)
+
+    <br />
+
+    - `isBatchListener`: 배치 리스너인지 여부를 반환
+    - `subBatchperPartition`: 배치를 파티션별로 분할할지 여부를 반환, default is null
+
+    저희는 배치 리스너도 아니고 `subBatchperPartition` 설정도 별도로 하지 않았기에 두 값 모두 false 이기에 else 로 빠지게 됩니다.
+
+    <br />
+
+    ![kafka-record-image-10](https://user-images.githubusercontent.com/28802545/292735646-23a9835b-a85c-4daf-affb-83582849ca75.png)
+
+    <br />
+
+    그리고 `pollConsumer()` 를 따라가보니 consumer 의 poll 메소드를 호출하네요. 계속 따라가 보겠습니다.
+
+<br />
+
+2. __KafkaConsumer.java__
+    ![kafka-record-image-11](https://user-images.githubusercontent.com/28802545/292736244-34306cb1-5d7a-4f08-9441-a646137bfe2d.png)
+
+    <br />
+
+    해당 `poll()` 메소드에서는 지정한 타임아웃 시간만큼 루프를 돌면서 `pollForFeches(timer)` 메소드를 호출합니다.
+
+    
+
+<!-- 여기서 `Fetcher` , `ConsumerNetworkClient` 해당 클래스는 파티션의 데이터를 컨슈머 클라이언트로 가져오는 역할을 하고 있습니다.
+
+저희는 __`Fetcher`__ , __`ConsumerNetworkClient`__ 클래스들을 살펴보아야 합니다. -->
+
 
 <!-- KafkaMessageListenerContainer run -> pollAndInvoke
 
+0. KafkaMessageListenerContainer 
 1. KafkaConsumer.java -> poll method / 1158 line
 2. Fetcher -> sendfetches method
 3. KafkaConsumer 으ㅣ Fetch 데이터에 레코드 존재함 -->
 
+<hr />
+<br />
+
 #### __Reference__
 
-- https://docs.confluent.io/platform/current/installation/configuration/consumer-configs.html#max-poll-records
 - https://kafka.apache.org/documentation/#consumerconfigs_max.poll.records
 - https://yaboong.github.io/spring/2020/06/07/kafka-batch-consumer-unintended-listener-invoking/
+- https://d2.naver.com/helloworld/0974525
