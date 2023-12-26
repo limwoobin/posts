@@ -135,7 +135,7 @@ __`max.poll.records`__ 설정이 __`MessageListener`__ 에서는 동작하지 �
 
 <br />
 
-## __Consumer Polling__
+## __Kafka Consumer Polling 동작 원리__
 
 카프카 컨슈머는 크게 다음과 같은 구성요소로 이루어져 있습니다.
 
@@ -189,24 +189,62 @@ __`max.poll.records`__ 설정이 __`MessageListener`__ 에서는 동작하지 �
 
     <br />
 
-    해당 `poll()` 메소드에서는 지정한 타임아웃 시간만큼 루프를 돌면서 `pollForFeches(timer)` 메소드를 호출합니다.
+    해당 `poll()` 메소드에서는 지정한 타임아웃 시간만큼 루프를 돌면서 `pollForFetches(timer)` 메소드를 호출합니다.
 
+    <br />    
+
+    ![kafka-record-image-12](https://user-images.githubusercontent.com/28802545/292740262-e0fefd65-209a-4abb-a159-8eb4cf8561a5.png)
+
+    - __sendFetches()__: Fetch 요청을 Queue 에 넣습니다. 이후 RequestFuture 타입을 반환하고 onSuccess 콜백 메서드에서 fetch 가 완료된 레코드들을 completedFetches 큐에 넣습니다.
+    - __client.poll()__: __`ConsumerNetworkClient`__ 객체에서 fetch 요청을 실제 네트워크를 태워서 보냅니다.
+    - __fetcher.collectFetch()__: completedFetches 큐에 레코드가 있으면 반환합니다.  
+    __이때, `max.poll.records` 의 개수만큼 반환합니다.__
+
+    `pollForFetches` 메소드에서는 다음과 같은 동작을 수행합니다.  
+    이때, 실제 네트워크 요청을 하는 __`ConsumerNetworkClient`__ 객체는 데이터를 `bytes` 형태로 가져와 keyDeserializer / valueDeseializer 를 통해  
+    역직렬화 후 completedFetches 에 데이터를 넣습니다.
+
+    그럼 이제 __`fetcher.collectFetch()`__ 내부를 들여다보겠습니다.
+
+<br />
+
+3. __AbstractFetch.collectFetch__
+
+    ![kafka-record-image-13](https://user-images.githubusercontent.com/28802545/292864791-dff30651-46d0-4386-98d1-b419699766fc.png)
+
+    <br />
+
+    `collectFetch()` 메소드를 간략하게 가져왔습니다.  
+    recordsRemaining 는 `max.poll.records` 의 설정 값이고 그 아래를 보면 `recordsRemaining > 0` 의 경우 계속 루프를 돌며 레코드를 가져오는 것을 볼 수 있습니다.
+
+    `Fetch<K, V nextFetch = fetchRecords(recordsRemaining)` 에서는 recordsRemaining 수 만큼 레코드를 가져오고 있습니다.
+
+    <br />
+
+    __CompletedFetch.fetchRecords__
+
+    ![kafka-record-image-14](https://user-images.githubusercontent.com/28802545/292863070-e7460809-5a47-4a81-a6df-aef4ed7d0e7a.png)
+
+    <br />
+
+    다음을 보시면 `maxRecords` 만큼 for loop 를 수행하면서 records 를 넣고 offset 을 기록합니다.  
+    만약 `max.poll.records` 값이 5이고 컨슘해야할 레코드들이 10개라면 5개만 가져오게 되는것이죠.
+
+    이후 `recordsRemaining -= nextFetch.numRecords();` 는 가져온 레코드 수 만큼 recordsRemaining 를 차감하고 있습니다.  
+
+    그래서 만약 recordsRemaining 이 5개이고 `fetchRecords(recordsRemaining)` 를 통해 5개의 레코드를 가져왔다면 차감되어 recordsRemaining 는 0이 되고 while 조건은 종료되게 됩니다.  
+
+    반대로 `fetchRecords(recordsRemaining)` 으로 가져온 레코드의 개수가 recordsRemaining 보다 적다면 그 다음 읽어온 records 가 없기 때문에 아래 코드와 같이 루프가 종료되게 됩니다.  
+
+    ```
+    CompletedFetch<K, V> records = completedFetches.peek();
+    if (records == null) break;
+    ```
     
-
-<!-- 여기서 `Fetcher` , `ConsumerNetworkClient` 해당 클래스는 파티션의 데이터를 컨슈머 클라이언트로 가져오는 역할을 하고 있습니다.
-
-저희는 __`Fetcher`__ , __`ConsumerNetworkClient`__ 클래스들을 살펴보아야 합니다. -->
-
-
-<!-- KafkaMessageListenerContainer run -> pollAndInvoke
-
-0. KafkaMessageListenerContainer 
-1. KafkaConsumer.java -> poll method / 1158 line
-2. Fetcher -> sendfetches method
-3. KafkaConsumer 으ㅣ Fetch 데이터에 레코드 존재함 -->
-
 <hr />
 <br />
+
+
 
 #### __Reference__
 
