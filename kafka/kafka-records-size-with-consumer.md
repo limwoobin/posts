@@ -1,5 +1,7 @@
 #### [**예제 및 테스트 코드는 github 에서 확인 가능합니다.**](https://github.com/limwoobin/blog-code-example/tree/master/kafka-record-example)
 
+<br />
+
 ## __Kafka MessageListener 에서 max.poll.records 옵션의 동작__
 
 이번에는 카프카 컨슈머의 __`Listener`__ 와 __`max.poll.records`__ 옵션의 관계, 그리고 제가 가지고 있던 오해에 대해 알아보겠습니다.
