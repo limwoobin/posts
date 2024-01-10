@@ -1,8 +1,8 @@
-#### [**예제 및 테스트 코드는 github 에서 확인 가능합니다.**](https://github.com/limwoobin/blog-code-example/tree/master/transaction-propagation)
+##### [**예제 및 테스트 코드는 github 에서 확인 가능합니다.**](https://github.com/limwoobin/blog-code-example/tree/master/transaction-propagation)
 
 <br />
 
-# __트랜잭션 REQUIRES_NEW 옵션에서 예외와 롤백__
+# __트랜잭션 REQUIRES_NEW 옵션에서의 예외 및 롤백__
 
 ## Overview
 
@@ -165,28 +165,6 @@ public class TeamController {
 
 시나리오는 다음과 같이 정의하겠습니다.
 
-<!-- ```
-해피 케이스
-- 부모 트랜잭션 실행
-- 자식 트랜잭션 실행(REQUIRES_NEW)
-
-예외 케이스 1
-- 부모 트랜잭션 실행
-- 자식 트랜잭션 실행(REQUIRES_NEW)
-- 자식 트랜잭션 예외 발생
-
-예외 케이스 2
-- 부모 트랜잭션 실행
-- 자식 트랜잭션 실행(REQUIRES_NEW)
-- 부모 트랜잭션 예외 발생
-
-예외 케이스 3
-- 부모 트랜잭션 실행
-- 자식 트랜잭션 실행(REQUIRES_NEW)
-- 자식 트랜잭션 예외 발생 후 캐치
-- 자식 트랜잭션 예외 캐치 후 현재 트랜잭션만 롤백
-``` -->
-
 ```shell
 curl --location 'http://localhost:8080/teams' \
 --header 'Content-Type: application/json' \
@@ -197,7 +175,7 @@ curl --location 'http://localhost:8080/teams' \
 
 <br />
 
-다음과 같은 시나리오를 가정하고 예제 코드를 만들어 테스트 해보겠습니다.
+그리고 다음과 같은 시나리오를 가정하고 예제 코드를 만들어 테스트 해보겠습니다.
 
 ```
 - 부모 트랜잭션 실행
@@ -250,11 +228,15 @@ public class TeamHistoryService {
 
 다음 코드의 실행결과를 확인해보겠습니다.
 
+<br />
+
 ![transaction-propagation-1](https://user-images.githubusercontent.com/28802545/294748262-c820f5b1-e858-4eb6-b8bc-649c1c8df5f9.png)
 
 <br />
 
 ```
+// response
+
  curl --location 'http://localhost:8080/teams/v2' \
 --header 'Content-Type: application/json' \
 --data 'test-team'
@@ -272,9 +254,12 @@ public class TeamHistoryService {
 __`REQUIRES_NEW`__ 는 분명 별도의 트랜잭션으로 동작하는것으로 알고있는데요 부모 트랜잭션까지 롤백이 발생했습니다. 왜 부모 트랜잭션도 같이 롤백 되었을까요? 
 
 __이유는 간단합니다. 바로 자식 트랜잭션에서 발생한 예외가 부모 트랜잭션에게 까지 전파되었기 때문입니다.__  
-자바에서는 예외가 발생하면 중간에 별도의 예외처리를 하지 않는 이상 콜 스택을 따라 처음 호출한곳 까지 예외가 전파되는데요. 
+자바에서는 예외가 발생하면 중간에 별도의 예외처리를 하지 않는 이상  
+콜 스택을 따라 처음 호출한곳 까지 예외가 전파되는데요. 
 
 `TeamService` 의 `teamHistoryService.saveHistory(team);` 로 호출한 부분까지 예외가 전파되어 결국 부모 트랜잭션 내에서도 예외가 발생하여 롤백이 진행된 것이었습니다.
+
+<br />
 
 ![transaction-propagation-2](https://user-images.githubusercontent.com/28802545/295545946-73873dcc-a027-4072-99e7-3b401a0d96db.png)
 
@@ -285,6 +270,8 @@ __이유는 간단합니다. 바로 자식 트랜잭션에서 발생한 예외�
 
 트랜잭션에서는 실제 예외가 발생하면 해당 트랜잭션에 롤백 마킹을 하게 되는데요  
 `TransactionAspectSupport.java` 클래스의 `completeTransactionAfterThrowing` 메소드를 한번 살펴보겠습니다.
+
+<br />
 
 ![transaction-propagation-3](https://user-images.githubusercontent.com/28802545/295547782-7edd7b4c-3f1e-45e1-838f-edb295fdc86e.png)
 
@@ -301,7 +288,7 @@ __rollbackOn method__
 <hr />
 
 
-그러면 이번에는 조금 바꿔서 예외를 던지지 않고 캐치하면 어떻게 될까요?
+그러면 이번에는 시나리오를 조금 바꿔 예외를 던지지 않고 캐치하면 어떻게 될까요?
 
 ```
 - 부모 트랜잭션 실행
@@ -310,6 +297,8 @@ __rollbackOn method__
 ```
 
 테스를 위해 코드를 다음과 같이 수정하겠습니다.
+
+<br />
 
 __TeamService.java__
 ```java
@@ -358,13 +347,26 @@ public class TeamHistoryService {
 
 <br />
 
+다시 API 를 호출해보겠습니다.
+
+```
+// response
+
+ curl --location 'http://localhost:8080/teams/v2' \
+--header 'Content-Type: application/json' \
+--data 'test-team'
+```
+
+<br />
+
 ![transaction-propagation-5](https://user-images.githubusercontent.com/28802545/294747935-4e23b759-cfa1-4dd0-901c-526c2ac0bee3.png)
 
 ![transaction-propagation-6](https://user-images.githubusercontent.com/28802545/295557729-d99fb2a5-9e2a-4cc1-a684-f21d1e38470f.png)
 
 <br />
 
-예외처리를 하여 자식 트랜잭션, 부모 트랜잭션에서 예외를 던지지 않으니 롤백없이 커밋이 된 것을 확인할 수 있습니다.
+예외처리를 하여 자식 트랜잭션, 부모 트랜잭션에서 예외를 던지지 않으니 모두 롤백없이  
+정상적으로 커밋이 된 것을 확인할 수 있습니다.
 
 <br />
 <hr />
@@ -378,6 +380,8 @@ public class TeamHistoryService {
 ```
 
 예외 발생을 위해 코드를 다음과 같이 수정하겠습니다.
+
+<br />
 
 __TeamService.java__
 ```java
@@ -441,9 +445,12 @@ curl --location 'http://localhost:8080/teams/v3' \
 
 <br />
 
-자식 트랜잭션에서 저장한 `TeamHistory` 는 저장되었지만 예외가 발생한 부모 트랜잭션에서 저장한 `Team` 은 롤백되었습니다.  
+자식 트랜잭션에서 저장한 `TeamHistory` 는 저장되었지만  
+예외가 발생한 부모 트랜잭션에서 저장한 `Team` 은 롤백되었습니다.  
 
 자식 트랜잭션에서는 예외가 발생하지 않아 롤백되지 않았지만 이후 부모 트랜잭션에서 예외가 발생했을때의 시점에는 자식 트랜잭션은 이미 커밋이 완료된 상태이기 때문입니다.
+
+이렇게 부모, 자식 트랜잭션 관계에서 예외가 발생하는 위치, 그리고 예외를 발생시키는 주체에 따라 롤백이 다르게 된 것을 확인할 수 있습니다.
 
 <br />
 <hr />
