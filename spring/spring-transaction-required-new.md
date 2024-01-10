@@ -240,6 +240,9 @@ public class TeamHistoryService {
 
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void saveHistory(Team team) {
+    TeamHistory teamHistory = TeamHistory.from(team);
+    teamHistoryRepository.save(teamHistory);
+
     throw new RuntimeException();
   }
 }
@@ -297,15 +300,16 @@ __rollbackOn method__
 <br />
 <hr />
 
-### 예외 케이스 3
+
+그러면 이번에는 조금 바꿔서 예외를 던지지 않고 캐치하면 어떻게 될까요?
+
 ```
 - 부모 트랜잭션 실행
 - 자식 트랜잭션 실행(REQUIRES_NEW)
 - 자식 트랜잭션 예외 발생 후 캐치
-- 자식 트랜잭션 예외 캐치 후 현재 트랜잭션만 롤백
 ```
 
-코드를 다음과 같이 수정하겠습니다.
+테스를 위해 코드를 다음과 같이 수정하겠습니다.
 
 __TeamService.java__
 ```java
@@ -339,8 +343,11 @@ public class TeamHistoryService {
   private final TeamHistoryRepository teamHistoryRepository;
 
   @Transactional(propagation = Propagation.REQUIRES_NEW)
-  public void saveHistory3(Team team) {
+  public void saveHistory(Team team) {
     try {
+      TeamHistory teamHistory = TeamHistory.from(team);
+      teamHistoryRepository.save(teamHistory);
+
       throw new RuntimeException();
     } catch (Exception e) {
       log.error("error message {}", e.getMessage());
@@ -348,6 +355,16 @@ public class TeamHistoryService {
   }
 }
 ```
+
+<br />
+
+![transaction-propagation-5](https://user-images.githubusercontent.com/28802545/294747935-4e23b759-cfa1-4dd0-901c-526c2ac0bee3.png)
+
+![transaction-propagation-6](https://user-images.githubusercontent.com/28802545/295557729-d99fb2a5-9e2a-4cc1-a684-f21d1e38470f.png)
+
+<br />
+
+예외처리를 하여 자식 트랜잭션, 부모 트랜잭션에서 예외를 던지지 않으니 롤백없이 커밋이 된 것을 확인할 수 있습니다.
 
 <br />
 <hr />
@@ -405,19 +422,42 @@ public class TeamHistoryService {
 
 다음 코드의 실행결과를 확인해보겠습니다.
 
-![transaction-propagation-3](https://user-images.githubusercontent.com/28802545/294749092-99d0395a-00f0-489f-bf49-b9ea40af8756.png)
+```
+curl --location 'http://localhost:8080/teams/v3' \
+--header 'Content-Type: application/json' \
+--data 'test-team'
+
+{
+    "timestamp":"2024-01-10T11:55:44.007+00:00",
+    "status":500,
+    "error":"Internal Server Error",
+    "path":"/teams/v3"
+}
+```
+
+![transaction-propagation-7](https://user-images.githubusercontent.com/28802545/294749092-99d0395a-00f0-489f-bf49-b9ea40af8756.png)
+
+![transaction-propagation-8](https://user-images.githubusercontent.com/28802545/295561925-10445014-0a1f-46ee-91b2-ecfb2f1f89e3.png)
 
 <br />
 
 자식 트랜잭션에서 저장한 `TeamHistory` 는 저장되었지만 예외가 발생한 부모 트랜잭션에서 저장한 `Team` 은 롤백되었습니다.  
-예외의 시점에 따라 롤백되는 데이터도 달라지게 되는것을 확인할 수 있습니다.
 
+자식 트랜잭션에서는 예외가 발생하지 않아 롤백되지 않았지만 이후 부모 트랜잭션에서 예외가 발생했을때의 시점에는 자식 트랜잭션은 이미 커밋이 완료된 상태이기 때문입니다.
 
 <br />
 <hr />
 
-## 후기
+### 후기
+
+이렇게 트랜잭션의 __`REQUIRES_NEW`__ 옵션과 예외상황에 따라 어떻게 동작하는지, 그리고 롤백이 어떻게 되는지  
+몇가지 케이스를 통해 알아보았습니다.
+
+__`REQUIRES_NEW`__ 옵션을 사용하게 된다면 롤백을 어느 범위까지 발생시킬지, 예외 전파를 어떻게 해야할지에 대한 고민도 할 수 있었습니다.  
+비즈니스에 적용할때도 성격에 맞게 위 부분을을 같이 고민하면서 사용하면 더 안전하고 효율적이게 사용할 수 있을것 같다는 생각이 들었습니다.
+
+감사합니다.
 
 #### reference
 - https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/transaction/annotation/Propagation.html
-- https://oingdaddy.tistory.com/28
+- https://techblog.woowahan.com/2606/
