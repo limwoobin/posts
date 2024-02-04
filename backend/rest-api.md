@@ -17,8 +17,7 @@ __`REpresentational State Transfer`__ 의 약자로
 
 즉, REST는 HTTP URI를 이용해 자원을 URI로 식별하고, HTTP 메서드(GET, POST, PUT, DELETE 등)를 사용하여 자원에 대한 행위를 정의하고 상태를 전달합니다.
 
-그리고 이런 REST 아키텍처 스타일을 따르는 API를 __REST API__ 라고 합니다.
-
+그리고 이런 REST 아키텍처 스타일을 따르는 API를 __REST API__ 라고 합니다.  
 다음은 REST 의 구성 요소와 특징에 대해 알아보겠습니다.
 
 <br />
@@ -54,20 +53,39 @@ REST API 는 다음의 구성으로 이루어져 있습니다.
 - Client 와 Server 의 데이터를 주고받는 형태, 표현 방법입니다.
 - 하나의 자원은 JSON, XML, RSS, TEXT 등의 여러 형태로 표현될 수 있습니다.
 - JSON, XML 을 통해 주고받는 것이 일반적입니다.
-- HTTP 의 Content
 
 <br />
 
+## __REST 의 특징__
+
+### 1. __Server-Client 구조__
+
+### 2. __Stateless - 무상태__
+
+### 3. __Cacheable - 캐싱 가능__
+
+### 4. __Layerd System - 계층화__
+
+### 5. __Uniform Interface - 인터페이스 일관성__
+
+### 6. __Code on Demand (optional)__
+
+<br />
+<hr />
+
 ## REST API 가 무엇인가요?
 
-### REST API 의 개념
 
-### REST API 의 특징
+### REST API 설계 규칙
 
-### REST API 의 장단점
+### REST API 작성 주의사항
+
+<br />
+<hr />
 
 ## RESTFul API 가 무엇인가요?
 
+<br />
 <hr>
 
 #### __reference__
