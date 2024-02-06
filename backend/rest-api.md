@@ -191,15 +191,13 @@ __성능 이슈__
 - code on demand 의 경우 서버에서 내려주는 응답은 동적이기에 HTTP Protocol 의 장점인 캐싱을 적용하기 어렵습니다. 
 - 캐싱 기능을 사용하지 못하면 성능에 악영향을 미칠 수도 있습니다.
 
-그럼에도 불구하고 왜 REST 제약조건에 code on demand 가 포함되었는지 궁금해서  
-stackoverflow 의 질문을 참고해 정리했습니다.
-
-<br />
+그럼에도 왜 REST의 제약조건에 __code on demand__ 가 포함되었는지 궁금해서  
+stackoverflow 의 질문을 참고해 정리한 내용은 아래와 같습니다.
 
 Code-on-demand 원칙은 요즘 거의 사용되고 있지 않습니다.  
 REST 논문이 작성될 당시의 웹은 거의 정적 document 였고 Client 도 웹 브라우저 뿐이었습니다.  
 당시의 클라이언트는 지금의 js 와는 다르게 로직을 구현하기 쉽지 않았다는 환경이었습니다.  
-그래서 위와 같은 제약이 만들어 지지 않았을까 싶습니다.
+그래서 위와 같은 제약이 만들어진 것으로 추측됩니다.
 
 ##### 참고 https://stackoverflow.com/questions/32094952/code-demand-constraint-for-restful-apis
 
@@ -208,6 +206,8 @@ REST 논문이 작성될 당시의 웹은 거의 정적 document 였고 Client �
 
 ## REST API 가 무엇인가요?
 
+결국 REST API 란 REST 한 특징을 기반으로 API 를 구현한 것을 말합니다.  
+OpenAPI(Naver, Kakao, Google ...) 를 제공하는 플랫폼들은 대부분 REST API 를 제공합니다.
 
 ### REST API 설계 규칙
 
@@ -217,6 +217,9 @@ REST 논문이 작성될 당시의 웹은 거의 정적 document 였고 Client �
 <hr />
 
 ## RESTFul API 가 무엇인가요?
+
+REST 아키텍처 원칙을 따르는 API 를 말합니다.  
+즉, REST 원칙을 준수하여 설계된 API 이고 
 
 <br />
 <hr>
