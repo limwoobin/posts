@@ -209,6 +209,8 @@ REST 논문이 작성될 당시의 웹은 거의 정적 document 였고 Client �
 결국 REST API 란 REST 한 특징을 기반으로 API 를 구현한 것을 말합니다.  
 OpenAPI(Naver, Kakao, Google ...) 를 제공하는 플랫폼들은 대부분 REST API 를 제공합니다.
 
+REST API 는 핵심 컨텐츠 및 기능을 외부에서 활용할 수 있도록 제공될 수 있습니다.
+
 ### REST API 설계 규칙
 
 ### REST API 작성 주의사항
@@ -216,10 +218,11 @@ OpenAPI(Naver, Kakao, Google ...) 를 제공하는 플랫폼들은 대부분 RES
 <br />
 <hr />
 
-## RESTFul API 가 무엇인가요?
+## RESTFul 이 무엇인가요?
 
-REST 아키텍처 원칙을 따르는 API 를 말합니다.  
-즉, REST 원칙을 준수하여 설계된 API 이고 
+REST 아키텍처 원칙을 따르는 시스템이나 서비스를 이야기합니다.
+
+즉, REST 원칙을 준수하여 설계된 API 이고 REST의 기본 원칙을 성실히 지킨 서비스 디자인을 __"RESTful 하다."__ 라고 표현합니다.
 
 <br />
 <hr>
