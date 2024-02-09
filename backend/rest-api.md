@@ -1,6 +1,6 @@
 # __Rest API, Rest, Restful API 란__ ?
 
-// rest api image 넣기
+![restapi-image1](https://private-user-images.githubusercontent.com/28802545/303613242-650f4a08-217d-48a2-b1fa-08588b7d74ef.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MDc0NzI0MjgsIm5iZiI6MTcwNzQ3MjEyOCwicGF0aCI6Ii8yODgwMjU0NS8zMDM2MTMyNDItNjUwZjRhMDgtMjE3ZC00OGEyLWIxZmEtMDg1ODhiN2Q3NGVmLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDAyMDklMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwMjA5VDA5NDg0OFomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTFhNzM0YjIyZDM1ODllYWIzYzI5ZGJhZjljNjgzNzBiN2NkN2M3MzkxM2MzMTc3MDY3ZTNlNWY0NWQxMWVmNTImWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.rw0Oe-hMhyUJGGt7uqQQJvkqYcQRi9LuaLM6eFbYzwk)
 
 안녕하세요 이번엔 RestAPI, REST, Restful 에 대해 알아보겠습니다.  
 
@@ -102,7 +102,7 @@ __Uniform Interface__ 에는 4가지 제약조건들이 존재합니다.
 
 __요청__
 
-[좋지 않은 예시]
+__[Bad]__
 ```
 GET / HTTP/1.1
 ```
@@ -111,7 +111,7 @@ GET / HTTP/1.1
 
 <br />
 
-[좋은 예시]
+__[Good]__
 ```
 GET / HTTP/1.1
 HOST : https://www.example.com 
@@ -123,7 +123,7 @@ HOST : https://www.example.com
 
 __응답__
 
-[좋지 않은 예시]
+__[Bad]__
 ```
 HTTP/1.1 200 OK
 {
@@ -150,7 +150,7 @@ Content-Type 을 추가해주어 이제 본문의 메시지가 어떤 타입인�
 
 <br />
 
-[좋은 예시]
+__[Good]__
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json
@@ -199,10 +199,9 @@ REST 논문이 작성될 당시의 웹은 거의 정적 document 였고 Client �
 당시의 클라이언트는 지금의 js 와는 다르게 로직을 구현하기 쉽지 않았다는 환경이었습니다.  
 그래서 위와 같은 제약이 만들어진 것으로 추측됩니다.
 
-##### 참고 https://stackoverflow.com/questions/32094952/code-demand-constraint-for-restful-apis
+##### 참고: https://stackoverflow.com/questions/32094952/code-demand-constraint-for-restful-apis
 
 <br />
-<hr />
 
 ## REST API 가 무엇인가요?
 
@@ -215,7 +214,59 @@ REST API 는 핵심 컨텐츠 및 기능을 외부에서 활용할 수 있도록
 
 #### 1. URI 는 정보의 자원으로 표현해야 한다.
 
+URI 는 정보의 자원으로 표현해야 하고 동사보다는 명사를 사용해야 합니다.
+
+__[Bad]__
+```
+GET HTTP 1.1
+http://example.com/users/deleteUser
+
+GET HTTP 1.1
+http://example.com/users/delete/1
+```
+
+위 같은 API 는 REST 하지 못한 API 입니다.  
+REST API 는 자원을 표현하는데에 중점을 두어야 합니다. deleteUser, delete 와 같이 행위를 나타내는 표현은 좋지 않습니다.
+
+__[Good]__
+```
+DELETE HTTP 1.1
+http://example.com/users/1
+```
+
 #### 2. 자원에 대한 행위는 HTTP Method 로 표현해야 한다.
+
+자원에 대한 행위는 URI 의 이름보다는 Http Method 로 표현되어야 합니다.
+
+__[Bad]__
+```
+회원 조회
+GET HTTP 1.1
+http://example.com/users/view/1
+
+-> 조회에 GET 을 사용하는것 맞지만 view 라는 행위가 들어가기에 부적합합니다.
+
+회원 추가
+GET HTTP 1.1
+http://example.com/users/insertUser
+
+-> 리소스를 생성하는데 GET 메소드는 적합하지 않습니다. 리소스 생성에는 POST 메소드를 사용합니다.
+insertUser 또한 행위가 URI 에 직접적으로 들어가기에 적합하지 않습니다.
+```
+
+<br />
+
+__[Good]__
+```
+회원 조회
+GET HTTP 1.1
+http://example.com/users/1
+
+[Good]
+회원 추가
+POST HTTP 1.1
+http://example.com/users/1
+```
 
 <hr />
 <br />
@@ -224,7 +275,7 @@ REST API 는 핵심 컨텐츠 및 기능을 외부에서 활용할 수 있도록
 
 #### 1. 슬래시(/) 로 계층관계를 표현한다.
 
-```shell
+```
 http://example.com/houses/apartments
 http://example.com/animals/mammals/whales
 ```
@@ -234,11 +285,13 @@ http://example.com/animals/mammals/whales
 URI에 포함되는 모든 글자는 리소스의 유일한 식별자로 사용되어야 합니다.  
 REST API는 분명한 URI를 만들어 통신을 해야 하기 때문에 혼동을 주지 않도록 URI 경로의 마지막에는 슬래시(/)를 사용하지 않습니다.
 
+__[Bad]__
 ```
-[Bad]
 http://example.com/users/ (X)
+```
 
-[Good]
+__[Good]__
+```
 http://example.com/users (O)
 ```
 
@@ -247,11 +300,13 @@ http://example.com/users (O)
 밑줄은 보기 어렵고 밑줄 때문에 문자가 가려질 수 있습니다.  
 이런 문제를 피하기 위해 밑줄(_) 대신 하이픈(-)을 사용하는 것이 좋습니다.
 
+__[Bad]__
 ```
-[Bad]
 http://example.com/users/recentOrders
+```
 
-[Good]
+__[Good]__
+```
 http://example.com/users/recent-orders
 ```
 
@@ -263,11 +318,13 @@ __RFC 3986(URI 문법 형식)__ 은 URI 스키마와 호스트를 제외하고�
 
 ##### [RFC-3986](https://www.ietf.org/rfc/rfc3986.txt)
 
+__[Bad]__
 ```
-[Bad]
 http://example.com/users/Orders
+```
 
-[Good]
+__[Good]__
+```
 http://example.com/users/orders
 ```
 
@@ -289,22 +346,23 @@ Http 상태코드를 이용해 응답을 나타냅니다.
 #### 7. 파일확장자는 URI 에 포함하지 않는다.
 
 REST API 에서는 메시지 바디 내용의 포맷을 나타내기 위한 파일 확장자를 URI 안에 포함시키지 않습니다.  
-Accept header 를 사용합니다.
+__Accept header__ 를 사용합니다.
 
+__[Bad]__
 ```
-[Bad]
+GET / HTTP/1.1
 http://example.com/users/1/profile.jpg
 
-[Good]
+```
+
+__[Good]__
+```
 GET / HTTP/1.1
 Accept: image/jpg
 Host: http://example.com/users/1/profile
 ```
 
-### REST API 작성 주의사항
-
 <br />
-<hr />
 
 ## RESTFul 이 무엇인가요?
 
