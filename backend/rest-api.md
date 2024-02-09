@@ -211,7 +211,95 @@ OpenAPI(Naver, Kakao, Google ...) 를 제공하는 플랫폼들은 대부분 RES
 
 REST API 는 핵심 컨텐츠 및 기능을 외부에서 활용할 수 있도록 제공될 수 있습니다.
 
+### REST API 디자인 가이드
+
+#### 1. URI 는 정보의 자원으로 표현해야 한다.
+
+#### 2. 자원에 대한 행위는 HTTP Method 로 표현해야 한다.
+
+<hr />
+<br />
+
 ### REST API 설계 규칙
+
+#### 1. 슬래시(/) 로 계층관계를 표현한다.
+
+```shell
+http://example.com/houses/apartments
+http://example.com/animals/mammals/whales
+```
+
+#### 2. URI 의 마지막 문자에 슬래시(/) 를 포함하지 않는다.
+
+URI에 포함되는 모든 글자는 리소스의 유일한 식별자로 사용되어야 합니다.  
+REST API는 분명한 URI를 만들어 통신을 해야 하기 때문에 혼동을 주지 않도록 URI 경로의 마지막에는 슬래시(/)를 사용하지 않습니다.
+
+```
+[Bad]
+http://example.com/users/ (X)
+
+[Good]
+http://example.com/users (O)
+```
+
+#### 3. 밑줄(_) 을 사용하지 않고, 하이픈(-) 을 사용한다.
+
+밑줄은 보기 어렵고 밑줄 때문에 문자가 가려질 수 있습니다.  
+이런 문제를 피하기 위해 밑줄(_) 대신 하이픈(-)을 사용하는 것이 좋습니다.
+
+```
+[Bad]
+http://example.com/users/recentOrders
+
+[Good]
+http://example.com/users/recent-orders
+```
+
+#### 4. URI 는 소문자로만 구성한다.
+
+URI 경로에 대문자 사용은 피해야 합니다. 대소문자에 따라 다른 리소스로 인식될 수 있기 때문입니다.
+
+__RFC 3986(URI 문법 형식)__ 은 URI 스키마와 호스트를 제외하고는 대소문자를 구별하도록 규정하기 때문입니다.
+
+##### [RFC-3986](https://www.ietf.org/rfc/rfc3986.txt)
+
+```
+[Bad]
+http://example.com/users/Orders
+
+[Good]
+http://example.com/users/orders
+```
+
+#### 6. 응답에는 HTTP 상태코드를 사용한다.
+
+잘 설계된 REST API는 그 리소스에 대한 응답을 잘 내어주는 것까지 포함되어야 합니다.  
+Http 상태코드를 이용해 응답을 나타냅니다.
+
+
+| HTTP Status Code  | Description  |
+| --- | ----- |
+| 1xx   | 전송 프로토콜 수준의 정보 교환 |
+| 2xx   | 클라어인트 요청이 성공적으로 수행됨 |
+| 3xx   | 클라이언트는 요청을 완료하기 위해 <br /> 추가적인 행동을 취해야 함 |
+| 4xx   | 클라이언트의 잘못된 요청 |
+| 5xx   | 서버쪽 오류로 인한 상태코드 |
+
+
+#### 7. 파일확장자는 URI 에 포함하지 않는다.
+
+REST API 에서는 메시지 바디 내용의 포맷을 나타내기 위한 파일 확장자를 URI 안에 포함시키지 않습니다.  
+Accept header 를 사용합니다.
+
+```
+[Bad]
+http://example.com/users/1/profile.jpg
+
+[Good]
+GET / HTTP/1.1
+Accept: image/jpg
+Host: http://example.com/users/1/profile
+```
 
 ### REST API 작성 주의사항
 
