@@ -1,6 +1,6 @@
-# __Rest API, Rest, Restful API 란__ ?
+# __Rest API, Rest, Restful API 란 ?__
 
-![restapi-image1](https://private-user-images.githubusercontent.com/28802545/303613242-650f4a08-217d-48a2-b1fa-08588b7d74ef.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MDc0NzI0MjgsIm5iZiI6MTcwNzQ3MjEyOCwicGF0aCI6Ii8yODgwMjU0NS8zMDM2MTMyNDItNjUwZjRhMDgtMjE3ZC00OGEyLWIxZmEtMDg1ODhiN2Q3NGVmLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDAyMDklMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwMjA5VDA5NDg0OFomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTFhNzM0YjIyZDM1ODllYWIzYzI5ZGJhZjljNjgzNzBiN2NkN2M3MzkxM2MzMTc3MDY3ZTNlNWY0NWQxMWVmNTImWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.rw0Oe-hMhyUJGGt7uqQQJvkqYcQRi9LuaLM6eFbYzwk)
+![restapi-image1](https://private-user-images.githubusercontent.com/28802545/303823850-e67ccbe8-7a49-41de-b62f-e751b0b8263d.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MDc1NTI1NzksIm5iZiI6MTcwNzU1MjI3OSwicGF0aCI6Ii8yODgwMjU0NS8zMDM4MjM4NTAtZTY3Y2NiZTgtN2E0OS00MWRlLWI2MmYtZTc1MWIwYjgyNjNkLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDAyMTAlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwMjEwVDA4MDQzOVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTRmMjBiMDA4MjdiMzIyZmVlOTYzY2EwOTIwZTU5N2Y3MTQ0N2I5YTc3ZjdkMWMxYTNkNjY1ZmY2N2Q0ZjdmZjYmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.xDFW7hREWEAlHo7O09A9vGtXUJFH8qOQrI8_UQF1AIg)
 
 안녕하세요 이번엔 RestAPI, REST, Restful 에 대해 알아보겠습니다.  
 
@@ -24,7 +24,7 @@ __`REpresentational State Transfer`__ 의 약자로
 
 <br />
 
-### REST 의 구성 요소
+### __REST 의 구성 요소__
 
 REST API 는 다음의 구성으로 이루어져 있습니다.
 
@@ -41,13 +41,13 @@ REST API 는 다음의 구성으로 이루어져 있습니다.
 - HTTP Method 를 사용합니다.
 - HTTP Method 는 다음과 같은 CRUD Operation 을 제공합니다.
 
-| HTTP Method  | Description  |
-| --- | ----- |
-| POST   | 생성(Create) |
-| GET   | 조회(Read) |
-| PUT   | 수정(Update) <br /> 자원을 모두 변경 |
-| PUT   | 수정(Update) <br /> 자원의 일부를 변경 |
-| DELETE   | 삭제(Delete) |
+    | HTTP Method  | Description  |
+    | --- | ----- |
+    | POST   | 생성(Create) |
+    | GET   | 조회(Read) |
+    | PUT   | 수정(Update) <br /> 자원을 모두 변경 |
+    | PUT   | 수정(Update) <br /> 자원의 일부를 변경 |
+    | DELETE   | 삭제(Delete) |
 
 <br />
 
@@ -207,18 +207,21 @@ Link: <https://devoong2.com/docs>; rel="profile"
 
 <br />
 
-__Optional 에 대한 이유 ?__
+#### __Optional 에 대한 이유 ?__
 
 __보안문제__
-- 서버에서 실행 가능한 코드를 클라이언트로 전송하게 되면 해당 코드는 서버의 컨트롤을 벗어나기에 악용될 수 있는 위험이 존재합니다.
+
+서버에서 실행 가능한 코드를 클라이언트로 전송하게 되면 해당 코드는 서버의 컨트롤을 벗어나기에 악용될 수 있는 위험이 존재합니다.
 
 __호환성__ 
-- REST 서비스는 WEB, IOS, Android 등 다양한 플랫폼들과 상호작용 합니다.  
-- 만약 해당 코드가 특정 플랫폼에 종속된다면 API 의 활용도가 떨어지게 됩니다.
+
+REST 서비스는 WEB, IOS, Android 등 다양한 플랫폼들과 상호작용 합니다.  
+만약 해당 코드가 특정 플랫폼에 종속된다면 API 의 활용도가 떨어지게 됩니다.
 
 __성능 이슈__
-- code on demand 의 경우 서버에서 내려주는 응답은 동적이기에 HTTP Protocol 의 장점인 캐싱을 적용하기 어렵습니다. 
-- 캐싱 기능을 사용하지 못하면 성능에 악영향을 미칠 수도 있습니다.
+
+code on demand 의 경우 서버에서 내려주는 응답은 동적이기에 HTTP Protocol 의 장점인 캐싱을 적용하기 어렵습니다.  
+캐싱 기능을 사용하지 못하면 성능에 악영향을 미칠 수도 있습니다.
 
 그럼에도 왜 REST의 제약조건에 __code on demand__ 가 포함되었는지 궁금해서  
 stackoverflow 의 질문을 참고해 정리한 내용은 아래와 같습니다.
@@ -232,16 +235,16 @@ REST 논문이 작성될 당시의 웹은 거의 정적 document 였고 Client �
 
 <br />
 
-## REST API 가 무엇인가요?
+## __REST API 가 무엇인가요?__
 
 결국 REST API 란 REST 한 특징을 기반으로 API 를 구현한 것을 말합니다.  
 OpenAPI(Naver, Kakao, Google ...) 를 제공하는 플랫폼들은 대부분 REST API 를 제공합니다.
 
 REST API 는 핵심 컨텐츠 및 기능을 외부에서 활용할 수 있도록 제공될 수 있습니다.
 
-### REST API 디자인 가이드
+### __REST API 디자인 가이드__
 
-#### 1. URI 는 정보의 자원으로 표현해야 한다.
+#### __1. URI 는 정보의 자원으로 표현해야 한다.__
 
 URI 는 정보의 자원으로 표현해야 하고 동사보다는 명사를 사용해야 합니다.
 
@@ -263,7 +266,7 @@ DELETE HTTP 1.1
 http://example.com/users/1
 ```
 
-#### 2. 자원에 대한 행위는 HTTP Method 로 표현해야 한다.
+#### __2. 자원에 대한 행위는 HTTP Method 로 표현해야 한다.__
 
 자원에 대한 행위는 URI 의 이름보다는 Http Method 로 표현되어야 합니다.
 
@@ -291,7 +294,6 @@ __[Good]__
 GET HTTP 1.1
 http://example.com/users/1
 
-[Good]
 회원 추가
 POST HTTP 1.1
 http://example.com/users/1
@@ -300,7 +302,7 @@ http://example.com/users/1
 <hr />
 <br />
 
-### 리소스 간의 관계를 표현하는 방법
+### __리소스 간의 관계를 표현하는 방법__
 
 REST 의 리소스 간에는 연관관계가 있을수 있습니다.  
 예를 들면, 사용자가 가진 디바이스 목록, 주문에 대한 장바구니의 상품 목록 등이 해당될 수 있습니다.
@@ -326,16 +328,16 @@ GET : /users/{userid}/likes/devices (관계명이 애매하거나 구체적 표�
 <br />
 
 
-### REST API 설계 규칙
+### __REST API 설계 규칙__
 
-#### 1. 슬래시(/) 로 계층관계를 표현한다.
+#### __1. 슬래시(/) 로 계층관계를 표현한다.__
 
 ```
 http://example.com/houses/apartments
 http://example.com/animals/mammals/whales
 ```
 
-#### 2. URI 의 마지막 문자에 슬래시(/) 를 포함하지 않는다.
+#### __2. URI 의 마지막 문자에 슬래시(/) 를 포함하지 않는다.__
 
 URI에 포함되는 모든 글자는 리소스의 유일한 식별자로 사용되어야 합니다.  
 REST API는 분명한 URI를 만들어 통신을 해야 하기 때문에 혼동을 주지 않도록 URI 경로의 마지막에는 슬래시(/)를 사용하지 않습니다.
@@ -350,7 +352,7 @@ __[Good]__
 http://example.com/users (O)
 ```
 
-#### 3. 밑줄(_) 을 사용하지 않고, 하이픈(-) 을 사용한다.
+#### __3. 밑줄(_) 을 사용하지 않고, 하이픈(-) 을 사용한다.__
 
 밑줄은 보기 어렵고 밑줄 때문에 문자가 가려질 수 있습니다.  
 이런 문제를 피하기 위해 밑줄(_) 대신 하이픈(-)을 사용하는 것이 좋습니다.
@@ -365,7 +367,7 @@ __[Good]__
 http://example.com/users/recent-orders
 ```
 
-#### 4. URI 는 소문자로만 구성한다.
+#### __4. URI 는 소문자로만 구성한다.__
 
 URI 경로에 대문자 사용은 피해야 합니다. 대소문자에 따라 다른 리소스로 인식될 수 있기 때문입니다.
 
@@ -383,7 +385,7 @@ __[Good]__
 http://example.com/users/orders
 ```
 
-#### 6. 응답에는 HTTP 상태코드를 사용한다.
+#### __5. 응답에는 HTTP 상태코드를 사용한다.__
 
 잘 설계된 REST API는 그 리소스에 대한 응답을 잘 내어주는 것까지 포함되어야 합니다.  
 Http 상태코드를 이용해 응답을 나타냅니다.
@@ -398,7 +400,7 @@ Http 상태코드를 이용해 응답을 나타냅니다.
 | 5xx   | 서버쪽 오류로 인한 상태코드 |
 
 
-#### 7. 파일확장자는 URI 에 포함하지 않는다.
+#### __6. 파일확장자는 URI 에 포함하지 않는다.__
 
 REST API 에서는 메시지 바디 내용의 포맷을 나타내기 위한 파일 확장자를 URI 안에 포함시키지 않습니다.  
 __Accept header__ 를 사용합니다.
@@ -419,7 +421,7 @@ Host: http://example.com/users/1/profile
 
 <br />
 
-### RESTFul 이 무엇인가요?
+### __RESTful 이 무엇인가요?__
 
 REST 아키텍처 원칙을 따르는 시스템이나 서비스를 이야기합니다.
 
