@@ -169,6 +169,35 @@ Link: <https://devoong2.com/docs>; rel="profile"
 #### __Hypermedia as the Engine of Application State (HATEOAS)__
 서버로부터 받은 리소스의 표현을 통해 다음에 취할 수 있는 액션에 대한 링크를 제공합니다.
 
+예를들면, 페이징의 경우 전,후 페이지에 대한 링크를 제공한다거나 연관된 리소스에 대해서도 링크를 제공할 수 있습니다.
+
+```
+{
+    [
+        {
+            "id":"user1",
+            "name":"terry"
+        },
+        {
+            "id":"user2",
+            "name":"carry"
+        }
+    ],
+    "links" :[
+        {
+            "rel":"pre_page",
+            "href":"http://xxx/users?offset=6&limit=5"
+        },
+        {
+            "rel":"next_page",
+            "href":"http://xxx/users?offset=11&limit=5"
+        }
+    ]
+}
+```
+
+위와 같이 페이징에 대 전/후 페이지에 대한 링크를 제공할 수 있습니다.
+
 <br />
 
 ### 6. __Code on Demand (Optional)__
@@ -271,6 +300,32 @@ http://example.com/users/1
 <hr />
 <br />
 
+### 리소스 간의 관계를 표현하는 방법
+
+REST 의 리소스 간에는 연관관계가 있을수 있습니다.  
+예를 들면, 사용자가 가진 디바이스 목록, 주문에 대한 장바구니의 상품 목록 등이 해당될 수 있습니다.
+
+이런 경우에는 다음과 같이 표현합니다.
+
+```
+/리소스명/리소스 ID/관계가 있는 다른 리소스명
+
+ex1) /users/{userId}/devices
+ex2) /orders/{orderId}/goods
+(일반적으로 소유 ‘has’ 의 관계를 표현할 때)
+```
+
+만약에 관계명이 복잡하다면 이를 서브 리소스에 명시적으로 표현하는 방법이 있습니다.  
+예를 들어 사용자가 ‘좋아하는’ 디바이스 목록을 표현해야 할 경우 다음과 같은 형태로 사용될 수 있습니다.
+
+```
+GET : /users/{userid}/likes/devices (관계명이 애매하거나 구체적 표현이 필요할 때)
+```
+
+<hr />
+<br />
+
+
 ### REST API 설계 규칙
 
 #### 1. 슬래시(/) 로 계층관계를 표현한다.
@@ -364,7 +419,7 @@ Host: http://example.com/users/1/profile
 
 <br />
 
-## RESTFul 이 무엇인가요?
+### RESTFul 이 무엇인가요?
 
 REST 아키텍처 원칙을 따르는 시스템이나 서비스를 이야기합니다.
 
@@ -378,3 +433,4 @@ REST 아키텍처 원칙을 따르는 시스템이나 서비스를 이야기합�
 - https://www.youtube.com/watch?v=RP_f5dMoHFc
 - https://learn.microsoft.com/ko-kr/azure/architecture/best-practices/api-design
 - https://restfulapi.net/
+- https://yangbongsoo.gitbook.io/study/undefined-1/rest#id-2.1-rest-uri
