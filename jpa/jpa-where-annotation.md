@@ -1,3 +1,5 @@
+![where-logo](https://private-user-images.githubusercontent.com/28802545/311180667-77940e83-11f0-4217-8212-57cf353669f0.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MDk4ODk0NzUsIm5iZiI6MTcwOTg4OTE3NSwicGF0aCI6Ii8yODgwMjU0NS8zMTExODA2NjctNzc5NDBlODMtMTFmMC00MjE3LTgyMTItNTdjZjM1MzY2OWYwLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDAzMDglMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwMzA4VDA5MTI1NVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTJhOGNmNDE3OGFhZjgwZjEzNzM3NDI2YmQ5OTljZThkYmY1ZjZlZmExZDI0OGVjNmJlOTc4Yjk2Y2EzZjJiNWMmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.jthkT8kMyi9UWe9UyLjCMURAiyUfb5nmdceFJUpxpjM)
+
 #### [**예제 및 테스트 코드는 github 에서 확인 가능합니다.**](https://github.com/limwoobin/blog-code-example/tree/master/jpa-where-annotation)
 
 <br />
@@ -193,7 +195,7 @@ void test() {
 
 QueryDSL 도 마찬가지로 잘 조회가 되네요.
 
-### QueryDSL Join 조회
+### case5. QueryDSL Join 조회
 
 ```java
 @Test
@@ -214,7 +216,7 @@ void test() {
 
 Team 과 Member 를 조인한 경우에도 두 엔티티 모두 조건에 status 가 잘 적용된 것을 보실 수 있습니다.
 
-### QueryDSL DTO 조회
+### casd6. QueryDSL DTO 조회
 
 QueryDSL 에서 DTO 로 조회하는 경우도 살펴보겠습니다.
 
