@@ -1,0 +1,1 @@
+# Kafka, Redis 의 Pub/Sub 방식의 차이
