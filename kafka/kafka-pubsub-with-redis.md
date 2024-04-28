@@ -3,19 +3,22 @@
 
 ![kafka-redis-pubsub-1](https://private-user-images.githubusercontent.com/28802545/326169428-9629df9d-8538-4c98-90bb-ef93f05e90c7.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MTQyMTEwNDcsIm5iZiI6MTcxNDIxMDc0NywicGF0aCI6Ii8yODgwMjU0NS8zMjYxNjk0MjgtOTYyOWRmOWQtODUzOC00Yzk4LTkwYmItZWY5M2YwNWU5MGM3LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA0MjclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwNDI3VDA5MzkwN1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTU4ZDI0NTkxZDJkMzUxNjJjN2RmMmY0MGI4YjcxNzkyMjc0ZDdkOTBhOGY1Y2UwNzhlY2UzNTRmYjFkMDZjMGQmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.Y3riYP5qpGt_jvjIeXoHl8d6cJQG0CaWR0gMsNxRaWc)
 
-# Kafka, Redis 의 Pub/Sub 방식의 차이
+<br />
+
+# __Kafka, Redis 의 Pub/Sub 방식의 차이__
 
 이번에는 Kafka 와 Redis 의 __Pub/Sub__ 기능에 대해 서로 어떤 차이가 있는지 알아보려합니다.
+
+그전에 우선 __Pub/Sub__ 기능이 무었인지 간단하게 살펴보겠습니다.
 
 <br />
 
 ## Pub/Sub 이란?
 
-그전에 우선 __Pub/Sub__ 기능이 무었인지 먼저 알아야 할텐데요.  
-__Pub/Sub__ 은 Publush / Subscribe 의 줄임말입니다. 즉 생산자/소비자 패턴이라고도 불립니다.
+__Pub/Sub__ 은 Publush / Subscribe 의 줄임말입니다. 생산자/소비자 패턴이라고도 불립니다.
 
 이 패턴은 메시지 기반의 미들웨어로 메시지를 발행하는 __발행자(publisher)__ 와 메시지를 수신하는 __구독자(subscribe)__ 로 나누어집니다.  
-그리고 이 중간에 __Topic/Event Channel__ 이 위치하게 됩니다.
+그리고 중간에 __Topic/Event Channel__ 이 위치하게 됩니다.
 
 이 패턴은 다음과 같은 특징을 가집니다.
 
@@ -24,11 +27,13 @@ __Pub/Sub__ 은 Publush / Subscribe 의 줄임말입니다. 즉 생산자/소비
 - 발행자와 구독자 서로의 관심사가 분리되어있기에 __느슨한 결합(Loose Coupling)__ 을 가집니다.
 - 비동기식 메시지 패턴입니다.
 
+<br />
+
 Kafka, Redis 서로의 Pub/Sub 방식이 어떻게 다른지 알아보겠습니다.
 
 <br />
 
-## Kafka Pub/Sub 의 특징
+## __Kafka Pub/Sub 의 특징__
 
 ![kafka-redis-pubsub-2](https://private-user-images.githubusercontent.com/28802545/326185000-e54711ac-4d0f-4c57-a5d9-1c7e3ac8b2c6.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MTQyMjg3ODUsIm5iZiI6MTcxNDIyODQ4NSwicGF0aCI6Ii8yODgwMjU0NS8zMjYxODUwMDAtZTU0NzExYWMtNGQwZi00YzU3LWE1ZDktMWM3ZTNhYzhiMmM2LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA0MjclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwNDI3VDE0MzQ0NVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTdhNDM0Mzg4YjMxZGVhZTEzNGEzZWE0YjY3Y2Q4YzI5ZjY0YTAzNjA0ZWQ5ZjMzOGIyMmFhNzk0OWRhZjJjZDAmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.iRvBybLztVDSZYVlbp5r_zA5O5KW56Yi0dVkiXuDMDw)
 
@@ -89,15 +94,34 @@ Kafka 와 Redis 의 Pub/Sub 방식의 차이에 대해 간단하게 정리해보
 
 | id  | Kafka  | Redis |
 | --- | ----- | ------ |
-| 메시지(이벤트) 저장 여부   | 토픽에 메시지를 일정 주기동안 저장할 수 있음  | 메시지가 Subscriber 에게 전송되면서 채널에서 바로 삭제됨   |
+| 메시지 저장 여부   | 토픽에 메시지를 일정 주기동안 저장할 수 있음  | 메시지가 Subscriber 에게 전송되면서 채널에서 바로 삭제됨   |
 | 메시지 수신 방식   | Consumer 가 polling 방식으로 Topic 에서 메시지를 가져감 | 채널에서 Subscriber 들에게 메시지를 push |
 | 전송 보장 | ack 옵션에 따라 보장 가능  | 메시지를 수신했는지 따로 확인하지 않음 |
-| 속도   | 메시지에 대해 ack 옵션에 따라 수신 확인 및 replica 작업이 있어 redis 보다는 비교적 느림(그래도 빠르다)  | In-Memory 기반으로 메시지 전송 후 수신 확인같은 별도의 작업이 없기에 Kafka 보다 비교적 가볍고 빠름 |
+| 지연시간 | 메시지에 대해 ack 옵션에 따라 수신 확인 등의 작업이 있어 redis 보다는 비교적 느림(그래도 빠르다)  | In-Memory 기반으로 메시지 전송 후 수신 확인같은 별도의 작업이 없어 Kafka 보다 비교적 가볍고 빠름 |
 
-### 데이터 
+<br />
+
+### __메시지 수신 단위의 차이__
+
+일반적으로 운영되는 서비스들은 배포, Scale-Out, 고가용성 등을 위해 인해 여러대의 인스턴스로 운영됩니다.
+
+이때 이 인스턴스들이 특정 메시지 수신을 위해 Kafka 와 Redis 의 토픽(채널)을 수신하고 있다고 가정해보겠습니다.  
+Kafka 의 경우 하나의 메시지가 발행되더라도 여러 인스턴스들은 같은 Consumer Group 으로 묶여있기에 하나의 인스턴스에서만 메시지를 수신합니다.  
+Kafka 메시지를 Consumer Group 단위로 수신하기 때문입니다.
+
+Redis 의 경우에는 각 Subscriber 단위로 메시지를 수신합니다.  
+즉, 하나의 메시지가 발행되더라도 각 인스턴스들은 모두 메시지를 수신하게 됩니다.
+
+그렇기에 이벤트를 전달하더라도 비즈니스의 성격 혹은 성능을 고려해서 선택해야합니다.  
+
+예를들면 낮은 Latency 를 요구하면서 모든 인스턴스들에게 캐시 동기화같은 기능이 필요한 경우라면 __Redis Pub/Sub__ 이 적합할 수 있습니다.
+
+혹은 의존성을 분리하고 특정 이벤트를 받아 중복없이 한건만 DB 에 저장해야하는 경우라면 __Kafka Pub/Sub__ 이 적합할 수 있습니다.  
+__Redis Pub/Sub__ 으로 전달받을 경우 N 건이 저장되어 비즈니스 요구사항이 틀어지거나 경합이 발생할 수 있기 때문입니다.
 
 <br />
 
 #### __reference__
 
 - https://inpa.tistory.com/entry/REDIS-%F0%9F%93%9A-PUBSUB-%EA%B8%B0%EB%8A%A5-%EC%86%8C%EA%B0%9C-%EC%B1%84%ED%8C%85-%EA%B5%AC%EB%8F%85-%EC%95%8C%EB%A6%BC
+- https://aws.amazon.com/ko/compare/the-difference-between-kafka-and-redis/
