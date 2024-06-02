@@ -224,11 +224,11 @@ public class MyServiceTestConfig {
 
 <br />
 
-__MyServiceTest.java__
+__IntegrationCacheTest.java__
 ```java
 @SpringBootTest
 @ContextConfiguration(classes = MyServiceTestConfig.class)
-public class MyServiceTest {
+public class IntegrationCacheTest {
 
   @Autowired
   private MyService mockMyService;
@@ -354,7 +354,7 @@ https://private-user-images.githubusercontent.com/28802545/335855955-de4c4532-6f
 
 `ApplicationContext` 초기화도 한번만 되었고 각 테스트에서 주입받은  `MyService` 객체도 `Mock`, `Spy` 로 알맞게 주입받아 테스트에 통과한것을 확인할 수 있습니다.
 
-### 실제 Bean 과 MockBean / SpyBean 을 같이 쓰고 싶은 경우에는?
+### __실제 Bean 과 MockBean / SpyBean 을 같이 쓰고 싶은 경우에는?__
 
 가짜객체에 대해서는  `MyServiceTestConfig.class` 에서 별도의 Bean 이름으로 명시해주고 있습니다.
 
