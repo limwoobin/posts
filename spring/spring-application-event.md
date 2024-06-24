@@ -155,7 +155,7 @@ public class UserEventListener {
 <br />
 
 
-의존성 분리를 하기 위해 __`@TransactionalEventListener`__ 를 알아보겠습니다.
+의존성 분리를 하기 위해 __`@TransactionalEventListener`__ 와 __`@Async`__ 를 알아보겠습니다.
 
 <br />
 
@@ -281,23 +281,134 @@ public void listen(MailSenderEvent event) {
 
 <br />
 
-## 비동기 이벤트로 처리하기 위해서는 ?
+## 비동기 이벤트 적용 (@Async)
 
+스프링에서는 __`@Async`__ 어노테이션을 이용해서 비동기를 적용할 수 있습니다.
 
-### 비동기 스레드 풀 선언 방식(SimpleAsyncTaskExecutor vs ThreadExecutor)
+비동기 이벤트를 적용해보겠습니다.
 
-### AsyncConfig 옵션 설명
-- coresize ...
+__AsyncConfig.java__
+```java
+@Configuration
+@EnableAsync
+public class AsyncConfig {
+}
+```
 
-### 주의사항
+__`@Async`__ 를 활성화하기 위해서는 __`@EnableAsync`__ 를 선언해주어야 합니다.  
+그리고 별도의 Config 클래스를 만들어 __`@EnableAsync`__ 를 적용합니다. (Main 클래스에 선언해도 무관합니다.)
+
+__UserEventListener.java__
+```java
+@Slf4j
+@Component
+public class UserEventListener {
+
+  @Async
+  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+  public void listen(Event event) {
+    // ...
+  }
+}
+```
+
+리스너에서 __`@Async`__ 어노테이션을 선언합니다.
+
+이제 정말 비동기로 동작하는지 예제코드를 통해 확인해보겠습니다.
+
+<br />
+
+## @Async 예제 코드
+
+로그를 찍어 순차대로 진행되는지 확인해보겠습니다.
+
+__UserSerivce.java__
+```java
+@Slf4j
+@Service
+public class UserService {
+  private final UserRepository userRepository;
+  private final ApplicationEventPublisher eventPublisher;
+
+  public UserService(UserRepository userRepository,
+                     ApplicationEventPublisher eventPublisher) {
+    this.userRepository = userRepository;
+    this.eventPublisher = eventPublisher;
+  }
+
+  @Transactional
+  public void save(UserDto userDto) {
+    User user = User.of(userDto.getName(), userDto.getEmail());
+    userRepository.save(user);
+
+    log.info("event publish start ...");
+    eventPublisher.publishEvent(new MailSenderEvent(user.getEmail()));
+    log.info("event publish end ...");
+  }
+}
+```
+
+start 로그를 찍후 이후 이벤트를 발행하고 종료 로그를 남깁니다.  
+만약 비동기로 실행된다면 이벤트 발행 후 이벤트가 완료되기까지 기다리지 않고 바로 종료로그를 찍어야 합니다.
+
+__UserEventListener.java__
+```java
+@Slf4j
+@Component
+public class UserEventListener {
+  private final MailSenderService mailSenderService;
+
+  public UserEventListener(MailSenderService mailSenderService) {
+    this.mailSenderService = mailSenderService;
+  }
+
+  @Async
+  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+  public void listen(MailSenderEvent event) {
+    try {
+      Thread.sleep(500);
+      log.info("event listen start ...");
+      mailSenderService.send(event.getEmail());
+      log.info("event listen end ...");
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+}
+```
+
+비동기로 처리되는지 확실히 하기 위해 sleep 을 500ms 정도 주었습니다.  
+이벤트가 호출되면 500ms 이후 이벤트 시작 및 종료로그가 남게됩니다.
+
+한번 실행해보겠습니다.
+
+![spring-event-image2](
+https://private-user-images.githubusercontent.com/28802545/342370485-66afaf7e-ee26-4180-b4e5-9a7181fd3be2.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MTkyMzg2MjQsIm5iZiI6MTcxOTIzODMyNCwicGF0aCI6Ii8yODgwMjU0NS8zNDIzNzA0ODUtNjZhZmFmN2UtZWUyNi00MTgwLWI0ZTUtOWE3MTgxZmQzYmUyLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA2MjQlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwNjI0VDE0MTIwNFomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWVhOGZkOGVkODZkYjUyZjQ4NDNmYzMxNDc1MGQyOWY2OGQ5N2I1MjFhNDJjNzM5NTI3N2ZjNjk4YmZkMTQwOWImWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.ZSX1XyNBiU4yvUw7rHuoxVF8sPno_6d8mT-PpkLAkCI)
+
+이벤트 처리와는 관계없이 호출한곳에서는 바로 종료 로그를 찍는것을 알 수 있습니다.
+
+### @Async 주의사항
+
+__`@Async`__ 는 기본적으로 프록시로 동작합니다. 그렇기에 사용시 __`@Transactional`__ 과 유사하게 주의해야할 부분도 있고  
+별도의 스레드를 사용하기 때문에 해당 부분에 대해서도 주의가 필요합니다.
+
+주의사항은 다음과 같습니다.
+
 - private method는 사용 불가
 - self-invocation(자가 호출) 불가, 즉 inner method는 사용 불가
 - QueueCapacity 초과 요청에 대한 비동기 method 호출시 방어 코드 작성
+- 예외가 전파되지 않아 별도의 예외처리 필요
 
-## AsyncUncaughtExceptionHandler 예외처리
+이외에도 여러 주의사항들이 있지만 여기서는 __`@Async`__ 를 이용한 비동기 이벤트 발행에 대해 간단히 살펴보았습니다.  
+
+이외에도 __`@Async`__ 는 스레드 풀 선언 방식(SimpleAsyncTaskExecutor, ThreadExecutor)  
+그리고 __ThreadPoolTaskExecutor__ 의 pool Size 설정 및 예외처리 등등 다양한 고민이 필요합니다.
+
+다음장에서는 __`@Async`__ 에 대해 조금 더 자세히 알아볼 수 있도록 하겠습니다.
 
 <hr />
 
 #### __reference__
 
 - https://www.baeldung.com/spring-events
+- https://www.baeldung.com/spring-async
