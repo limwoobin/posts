@@ -166,6 +166,7 @@ if (time <= 0) {
     acquireFailed(waitTime, unit, threadId);
     return false;
 }
+// ...
 ```
 
 락 획득을 위해 __`tryLock`__ 메서드를 진입하면 바로 시간, 스레드Id 에 대해 변수로 만들고  
@@ -265,6 +266,7 @@ Id 는 Redisson ConnectionManager 의 Id 입니다.
 <br />
 
 ```java
+// ...
 RFuture<Long> ttlRemainingFuture;
 if (leaseTime > 0) {
     ttlRemainingFuture = tryLockInnerAsync(waitTime, leaseTime, unit, threadId, RedisCommands.EVAL_LONG);
@@ -272,6 +274,7 @@ if (leaseTime > 0) {
     ttlRemainingFuture = tryLockInnerAsync(waitTime, internalLockLeaseTime,
             TimeUnit.MILLISECONDS, threadId, RedisCommands.EVAL_LONG);
 }
+// ...
 ```
 
 그럼 다시 __`tryAcquireAsync`__ 로 돌아와서 __tryLockInnerAsync__ 메서드를 호출하는 부분을 보겠습니다.
@@ -290,6 +293,7 @@ __internalLockLeaseTime__ 은 Redisson Config 의 lockWatchdogTimeout 이며 기
 <br />
 
 ```java
+// ...
 CompletionStage<Long> f = ttlRemainingFuture.thenApply(ttlRemaining -> {
     // lock acquired
     if (ttlRemaining == null) {
@@ -301,6 +305,7 @@ CompletionStage<Long> f = ttlRemainingFuture.thenApply(ttlRemaining -> {
     }
     return ttlRemaining;
 });
+// ...
 ```
 
 그리고 __`tryLockInnerAsync`__ 에서 TTL 을 받아온 후 로직입니다.
@@ -315,6 +320,7 @@ __`scheduleExpirationRenewal(threadId);`__ 의 역할은 간략히 말씀드리�
 
 
 ```java
+// ...
 long time = unit.toMillis(waitTime);
 long current = System.currentTimeMillis();
 long threadId = Thread.currentThread().getId();
@@ -329,6 +335,7 @@ if (time <= 0) {
     acquireFailed(waitTime, unit, threadId);
     return false;
 }
+// ...
 ```
 
 그리고 다시 __`tryLock`__ 메서드입니다.
@@ -339,9 +346,10 @@ if (time <= 0) {
 
 <hr />
 
-## 2. 락에 대한 채널을 구독
+## __2. Lock에 대해 Redis Pub/Sub 채널 구독__
 
 ```java
+// ...
 current = System.currentTimeMillis();
 CompletableFuture<RedissonLockEntry> subscribeFuture = subscribe(threadId);
 try {
@@ -362,13 +370,120 @@ try {
     acquireFailed(waitTime, unit, threadId);
     return false;
 }
+// ...
 ```
+
+응답받은 TTL 이 존재하는 경우에는 __threadId__ 로 채널을 구독하게 됩니다.  
+그리고 __`CompletableFuture`__ 로 응답을 가져오고 이때 __`TimeoutException, ExecutionException`__ 을 예외로 선언해 해당 예외가 발생하면 락 획득에 대해 실패로 처리하게 됩니다.
+
+예외가 발생하는 경우는 아래와 같습니다.
+
+- __`TimeoutException`__: 채널을 구독하여 대기하는 동안 __waitTime__ 이 지난 경우
+- __`ExecutionException`__: __`CompletableFuture`__ 에서 예외가 발생한 경우
+
+<br />
+
+이제 락을 구독하는 __subscribe__ 메서드를 한번 살펴보겠습니다.  
+아래는 __subscribe__ 메서드의 전체 코드입니다.
+
+__subscribe method__
+```java
+public CompletableFuture<E> subscribe(String entryName, String channelName) {
+    AsyncSemaphore semaphore = service.getSemaphore(new ChannelName(channelName));
+    CompletableFuture<E> newPromise = new CompletableFuture<>();
+
+    semaphore.acquire().thenAccept(c -> {
+        if (newPromise.isDone()) {
+            semaphore.release();
+            return;
+        }
+
+        E entry = entries.get(entryName);
+        if (entry != null) {
+            entry.acquire();
+            semaphore.release();
+            entry.getPromise().whenComplete((r, e) -> {
+                if (e != null) {
+                    newPromise.completeExceptionally(e);
+                    return;
+                }
+                newPromise.complete(r);
+            });
+            return;
+        }
+
+        E value = createEntry(newPromise);
+        value.acquire();
+
+        E oldValue = entries.putIfAbsent(entryName, value);
+        if (oldValue != null) {
+            oldValue.acquire();
+            semaphore.release();
+            oldValue.getPromise().whenComplete((r, e) -> {
+                if (e != null) {
+                    newPromise.completeExceptionally(e);
+                    return;
+                }
+                newPromise.complete(r);
+            });
+            return;
+        }
+
+        RedisPubSubListener<Object> listener = createListener(channelName, value);
+        CompletableFuture<PubSubConnectionEntry> s = service.subscribeNoTimeout(LongCodec.INSTANCE, channelName, semaphore, listener);
+        newPromise.whenComplete((r, e) -> {
+            if (e != null) {
+                s.completeExceptionally(e);
+            }
+        });
+        s.whenComplete((r, e) -> {
+            if (e != null) {
+                entries.remove(entryName);
+                value.getPromise().completeExceptionally(e);
+                return;
+            }
+            value.getPromise().complete(value);
+        });
+
+    });
+
+    return newPromise;
+}
+```
+
+우선 특정 채널에 대한 __세마포어__ 와 __newPromise__ 라는 __CompletableFuture__ 를 선언합니다.
+
+이후 세마포어에선 acquire 시 실행할 콜백 함수를 선언합니다.  
+그리고 아래에선 채널에 대한 Redis 채널에 대한 __Pub/Sub Listener__ 를 생성하고 __subscribeNoTimeout__ 를 통해 해당 채널을 구독합니다.
+
+이후 __newPromise__ 와 __CompletableFuture<PubSubConnectionEntry>__ 에 대해 콜백함수를 선언합니다.  
+마지막으로 __CompletableFuture__ 에 __RedissonLockEntry__ 을 담아 리턴합니다.
+
+이때 레디스 채널명은 아래와 같이 __channelName + Lock Key__ 조합으로 생성되는것을 확인할 수 있습니다.
+
+__RedissonLock.java__
+![redisson-trylock-image8](https://private-user-images.githubusercontent.com/28802545/350962694-8bc3bdd0-5c4e-4b21-a5c2-740456a8ee10.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MjE2NTEzMDMsIm5iZiI6MTcyMTY1MTAwMywicGF0aCI6Ii8yODgwMjU0NS8zNTA5NjI2OTQtOGJjM2JkZDAtNWM0ZS00YjIxLWE1YzItNzQwNDU2YThlZTEwLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA3MjIlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwNzIyVDEyMjMyM1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTlkNzI3Njg0ZTQ0Njc2Njg0ZjkyOTZmODYwMmQwOTdlNGNhZmQ0ZWQzMTUyZTZhZjVhZWMzMTY4ZmM5YmU3ODUmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.keAI2VR50AWtrjNEMFNavbgC8e8LAZ6r0L-ggY0cye8)
+
+__Redis CLI__
+![redisson-trylock-image9](https://private-user-images.githubusercontent.com/28802545/350963341-92d82756-38a7-45be-bdb0-3329e644e209.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MjE2NTE0NDIsIm5iZiI6MTcyMTY1MTE0MiwicGF0aCI6Ii8yODgwMjU0NS8zNTA5NjMzNDEtOTJkODI3NTYtMzhhNy00NWJlLWJkYjAtMzMyOWU2NDRlMjA5LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA3MjIlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwNzIyVDEyMjU0MlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTQyMGVjMWMyZjNmMmUyZmU0NDg3ODVhMTRjNDIxYTM3OGUxYTEwZWUxZmZmYTUyN2U4OGYzNjNkNzI3N2UzM2QmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.gEWeBLXGPigSyBtK9tGJvlzKorL_xLl2Tlgay9Cx1cg)
+
+<br />
+
+> __`subscribeFuture.get(time, TimeUnit.MILLISECONDS);`__
+
+이후 CompletableFuture 의 get 을 통해 값을 가져옵니다.  
+이때 __RedissonLockEntry__ 객체에 세마포어를 가져오게 됩니다.
+
+아래 디버깅 이미지를 보면 __latch__ 에는 세마포어 객체가 존재하는것을 확인할 수 있고 __counter__ 는 Lock을 관리하는 객체인 __RedissonLockEntry__ 에 acquire() 한 횟수를 나타냅니다.
+
+![redisson-trylock-image10](https://private-user-images.githubusercontent.com/28802545/350961176-be64f7b3-d7f7-49ed-ab50-ae9ef26ed8be.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MjE2NTMxNjAsIm5iZiI6MTcyMTY1Mjg2MCwicGF0aCI6Ii8yODgwMjU0NS8zNTA5NjExNzYtYmU2NGY3YjMtZDdmNy00OWVkLWFiNTAtYWU5ZWYyNmVkOGJlLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA3MjIlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwNzIyVDEyNTQyMFomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTBhMTFhZWMyMzhmMDhlODY4Y2IzMTI2NzkyYzA3MWE0ZTMyNzgzMjU1ZjMxYzk5ZjMwNTY0MWYzNWQ2OGU5ZjkmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.vtrHzIyMRGyTPAyPK9xk6c3VGG4xBMyM-E_RDYEp69s)
 
 <br />
 
 ## 3. 락 획득 재시도
 
 ```java
+// ...
 try {
     time -= System.currentTimeMillis() - current;
     if (time <= 0) {
@@ -407,6 +522,7 @@ try {
 } finally {
     unsubscribe(commandExecutor.getNow(subscribeFuture), threadId);
 }
+// ...
 ```
 
 #### __reference__
