@@ -525,6 +525,117 @@ try {
 // ...
 ```
 
+위 코드는 Redis 채널 구독 이후 로직입니다.  
+여기에서는 락 획득을 위해 재시도하는 로직이 진행됩니다.
+
+하나씩 따라가보겠습니다.
+
+```java
+// ...
+time -= System.currentTimeMillis() - current;
+if (time <= 0) {
+    acquireFailed(waitTime, unit, threadId);
+    return false;
+}
+// ...
+```
+
+우선 waitTime 인 time 변수에 시간을 차감하여 현재 남은시간을 다시 확인합니다.  
+__`time <= 0`__ 이라는건 waitTime 이 모두 지났다는 뜻이므로 실패를 리턴합니다.
+
+```java
+// ...
+while (true) {
+    long currentTime = System.currentTimeMillis();
+    ttl = tryAcquire(waitTime, leaseTime, unit, threadId);
+    // lock acquired
+    if (ttl == null) {
+        return true;
+    }
+
+    time -= System.currentTimeMillis() - currentTime;
+    if (time <= 0) {
+        acquireFailed(waitTime, unit, threadId);
+        return false;
+    }
+
+    // ...
+    // waiting for message
+    currentTime = System.currentTimeMillis();
+    if (ttl >= 0 && ttl < time) {
+        commandExecutor.getNow(subscribeFuture).getLatch().tryAcquire(ttl, TimeUnit.MILLISECONDS);
+    } else {
+        commandExecutor.getNow(subscribeFuture).getLatch().tryAcquire(time, TimeUnit.MILLISECONDS);
+    }
+
+    time -= System.currentTimeMillis() - currentTime;
+    if (time <= 0) {
+        acquireFailed(waitTime, unit, threadId);
+        return false;
+    }
+}
+```
+
+그 다음에는 while loop 에 진입합니다.  
+__Redisson__ 은 스핀락 대신 Pub/Sub 구조를 사용한다고 말씀드렸는데요. 내부적으로는 스핀락을 사용하는것일까요?
+
+일단 따라가보겠습니다.
+
+while loop 진입 후 __tryAcquire__ 메서드를 호출해 락 획득을 시도하네요.  
+처음과 동일하게 TTL 존재여부에 따라 성공/실패를 리턴합니다.
+
+이후 time 변수를 재계산하여 waitTime 이 경과했는지도 확인하네요.
+
+```java
+// ...
+while (true) {
+    // ...
+    
+    // waiting for message
+    currentTime = System.currentTimeMillis();
+    if (ttl >= 0 && ttl < time) {
+        commandExecutor.getNow(subscribeFuture).getLatch().tryAcquire(ttl, TimeUnit.MILLISECONDS);
+    } else {
+        commandExecutor.getNow(subscribeFuture).getLatch().tryAcquire(time, TimeUnit.MILLISECONDS);
+    }
+
+    time -= System.currentTimeMillis() - currentTime;
+    if (time <= 0) {
+        acquireFailed(waitTime, unit, threadId);
+        return false;
+    }
+}
+```
+
+
+> __commandExecutor.getNow(subscribeFuture).getLatch().tryAcquire(long timeout, TimeUnit unit);__
+
+해당 코드는 세마포어의 tryAcquire 메서드를 호출하는데요.  
+즉, 해당 코드에서는 timeout 시간만큼 해당 세마포어의 허가를 얻기위해 대기합니다.  
+
+이때, TTL 이 존재하고 time(남은 대기시간) 이 TTL 보다 크면 timeout parameter 로 TTL 을 전달합니다.  
+TTL 만큼 세마포어 획득을 기다리겠다는 뜻입니다.
+
+그렇지 않다면 남은 대기시간만큼 세마포어 획득을 기다립니다.  
+왜냐하면 TTL 이 남은 대기시간보다 큰데 TTL 만큼 기다린다면 대기시간이 의미가 없어져서 그렇습니다.
+
+그리고 대기중인 timeout 시간보다 Lock 이 먼저 해제된다면 바로 세마포어의 허가를 받아옵니다.
+
+이후 세마포어의 허가를 얻고 난 이후 다시 time 을 재계산하여 대기시간이 경과했는지 확인합니다.  
+그리고 while loop 의 처음으로 돌아가 다시 락 획득을 시도해 TTL 결과를 얻어오고 반복합니다.
+
+이때 만약 기존 락이 해제되지 않았거나 다른 스레드가 먼저 락을 선점했다면 다시 이 과정을 반복하게 됩니다.
+
+이 __while loop__ 때문에 Redisson 도 스핀락으로 동작한다고 볼 수도 있지만
+이 사이에 __pub/sub__ 과 __세마포어__ 개념이 존재하여 세마포어 허가를 얻은 스레드에 대해서만 접근을 허용해 접근 횟수를 획기적으로 줄였기에 다르게도(?) 볼 수 있지 않을까 생각했습니다.
+
+<br />
+
+## __tryLock 의문...__
+
+실제 pubsub 채널은 1개만생긴다 왜그럻지...
+
+
 #### __reference__
 
 - https://incheol-jung.gitbook.io/docs/q-and-a/spring/redisson-trylock
