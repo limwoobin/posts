@@ -1,4 +1,4 @@
-![redisson-trylock-image1]()
+![redisson-trylock-image1](https://private-user-images.githubusercontent.com/28802545/351322847-93b84a6f-00ca-49b9-905e-e72af15a09da.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MjE3Mzc5MjEsIm5iZiI6MTcyMTczNzYyMSwicGF0aCI6Ii8yODgwMjU0NS8zNTEzMjI4NDctOTNiODRhNmYtMDBjYS00OWI5LTkwNWUtZTcyYWYxNWEwOWRhLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA3MjMlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwNzIzVDEyMjcwMVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWFhYmQwMWVkMDgwY2FhNDAwNDhmZjBmNDM2YzU1NGM1ZGE2ODlkZWIxMDczMjI4YTg3NDQ2OTliNjYwMDlmM2UmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.cuOn9lj0872HwmeDp3ubeN9sMS4cPJilr5WWBgCUYfg)
 
 # __[Redis] Redisson TryLock 동작과정 살펴보기__
 
@@ -546,33 +546,35 @@ __`time <= 0`__ 이라는건 waitTime 이 모두 지났다는 뜻이므로 실�
 ```java
 // ...
 while (true) {
-    long currentTime = System.currentTimeMillis();
-    ttl = tryAcquire(waitTime, leaseTime, unit, threadId);
-    // lock acquired
-    if (ttl == null) {
-        return true;
-    }
+        long currentTime = System.currentTimeMillis();
+        ttl = tryAcquire(waitTime, leaseTime, unit, threadId);
+        // lock acquired
+        if (ttl == null) {
+            return true;
+        }
 
-    time -= System.currentTimeMillis() - currentTime;
-    if (time <= 0) {
-        acquireFailed(waitTime, unit, threadId);
-        return false;
-    }
+        time -= System.currentTimeMillis() - currentTime;
+        if (time <= 0) {
+            acquireFailed(waitTime, unit, threadId);
+            return false;
+        }
 
-    // ...
-    // waiting for message
-    currentTime = System.currentTimeMillis();
-    if (ttl >= 0 && ttl < time) {
-        commandExecutor.getNow(subscribeFuture).getLatch().tryAcquire(ttl, TimeUnit.MILLISECONDS);
-    } else {
-        commandExecutor.getNow(subscribeFuture).getLatch().tryAcquire(time, TimeUnit.MILLISECONDS);
-    }
+        // waiting for message
+        currentTime = System.currentTimeMillis();
+        if (ttl >= 0 && ttl < time) {
+            commandExecutor.getNow(subscribeFuture).getLatch().tryAcquire(ttl, TimeUnit.MILLISECONDS);
+        } else {
+            commandExecutor.getNow(subscribeFuture).getLatch().tryAcquire(time, TimeUnit.MILLISECONDS);
+        }
 
-    time -= System.currentTimeMillis() - currentTime;
-    if (time <= 0) {
-        acquireFailed(waitTime, unit, threadId);
-        return false;
+        time -= System.currentTimeMillis() - currentTime;
+        if (time <= 0) {
+            acquireFailed(waitTime, unit, threadId);
+            return false;
+        }
     }
+} finally {
+    unsubscribe(commandExecutor.getNow(subscribeFuture), threadId);
 }
 ```
 
@@ -624,7 +626,8 @@ TTL 만큼 세마포어 획득을 기다리겠다는 뜻입니다.
 이후 세마포어의 허가를 얻고 난 이후 다시 time 을 재계산하여 대기시간이 경과했는지 확인합니다.  
 그리고 while loop 의 처음으로 돌아가 다시 락 획득을 시도해 TTL 결과를 얻어오고 반복합니다.
 
-이때 만약 기존 락이 해제되지 않았거나 다른 스레드가 먼저 락을 선점했다면 다시 이 과정을 반복하게 됩니다.
+만약 이때 기존의 락이 해제되지 않았다면 다시 이 과정을 반복하게 됩니다.  
+그리고 마지막에 채널에 대한 구독을 해제하고 종료합니다.
 
 이 __while loop__ 때문에 Redisson 도 스핀락으로 동작한다고 볼 수도 있지만
 이 사이에 __pub/sub__ 과 __세마포어__ 개념이 존재하여 세마포어 허가를 얻은 스레드에 대해서만 접근을 허용해 접근 횟수를 획기적으로 줄였기에 다르게도(?) 볼 수 있지 않을까 생각했습니다.
@@ -633,8 +636,36 @@ TTL 만큼 세마포어 획득을 기다리겠다는 뜻입니다.
 
 ## __tryLock 의문...__
 
-실제 pubsub 채널은 1개만생긴다 왜그럻지...
+로컬에서 N 개의 스레드를 생성해 Lock 획득을 시도하며 테스트를 진행하던 중 기존에 알고있던 개념과 다른 부분을 발견했습니다.
 
+N 개의 스레드가 Lock 획득을 기다린다면 저는 당연히 N-1 개의 스레드가 채널을 구독하고 있을것으로 생각했는데요.  
+실제로는 한개의 스레드만 채널을 구독하고있었습니다.
+
+![redisson-trylock-image11](https://private-user-images.githubusercontent.com/28802545/351306251-44d47ec7-240d-4193-b20a-cbc4ce137f4c.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MjE3MzQ0MTgsIm5iZiI6MTcyMTczNDExOCwicGF0aCI6Ii8yODgwMjU0NS8zNTEzMDYyNTEtNDRkNDdlYzctMjQwZC00MTkzLWIyMGEtY2JjNGNlMTM3ZjRjLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA3MjMlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwNzIzVDExMjgzOFomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTU4OTk4NzUyOGViODQxMDVlZTIxMzY2Zjk5ODNkYmFkNTFjYTZhZDU5MWQ5MmZkNDYzZTJmOTBkYWQ5NzkwMGImWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.oLVQ4SpInLipghg4_TTy2PlUTJzFGL5PhUkKnFQaTww)
+
+그래서 구독하는 로직을 다시 살펴보았습니다.
+
+![redisson-trylock-image12](https://private-user-images.githubusercontent.com/28802545/351311431-780fe874-1d7a-4b04-9c18-2410816f4f5c.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MjE3MzU1NjYsIm5iZiI6MTcyMTczNTI2NiwicGF0aCI6Ii8yODgwMjU0NS8zNTEzMTE0MzEtNzgwZmU4NzQtMWQ3YS00YjA0LTljMTgtMjQxMDgxNmY0ZjVjLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA3MjMlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwNzIzVDExNDc0NlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTBlODY5ZGM1OTlkMGExNTIwNGE5ODk4NTI1Nzk4ZjRhMGUyMTc0ZmM2YzkxMWM3M2ZiZWM0NDNmNzcyOTk0NzkmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.8nbmHHFzd5gF_dieTX6XGULwvYGJaFjlZhDmxipg3cs)
+
+- 1. __entryName__ 으로 __RedissonLockEntry__ 를 가져옵니다.
+- 2. RedissonLockEntry 와 세마포어에게 락 획득에 관련된 설정을 합니다.
+- 3. CompletableFuture 에 콜백을 등록하고 리턴합니다.
+
+__LockEntry__ 가 존재한다면 바로 리턴하는것을 볼 수 있습니다.
+
+즉, 하나의 Lock 에 대해서는 모든 스레드가 채널을 구독하는것이 아니라 가장 우선순위가 높은 하나의 스레드만 구독을 하는것입니다.  
+그리고 나머지 스레드는 세마포어의 큐로 들어가 대기를 한다고 볼 수 있습니다.
+
+이후 __Redis Pub/Sub__ 을 통해 락이 해제되었다는 신호를 받으면 세마포어의 큐에서 우선순위가 높은 스레드가 락 획득을 시도하게 됩니다.
+
+만약 __Pub/Sub__ 을 사용하지 않고 세마포어만 두었다면 락 해제에 대한 신호를 받기가 어려워 __Pub/Sub__ 을 이용한것이 아닐까 싶습니다.  
+그리고 __Redis Channel__ 에 대해 모든 스레드가 구독을 하게되면 그것도  비용이니 __Pub/Sub__ 은 해제를 위한 신호로만 사용하고 실제 대기에 대한 처리는 세마포어를 이용해 자원을 효율적으로 사용한것이 아닐까(?) 추측을 해봅니다.
+
+마지막 의문에 대해서는 문서나 다른 자료들을 찾아봤지만 여의치 않아서 의문형으로 남겨놓았는데요.  
+혹시라도 잘못된 부분이나 다른 의견이 있으신분들은 자유롭게 코멘트 남겨주시면 감사하겠습니다.
+
+<br />
+<hr />
 
 #### __reference__
 
