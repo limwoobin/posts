@@ -1,0 +1,149 @@
+![tomcat-thread-image1]()
+
+#### [**예제 및 테스트 코드는 github 에서 확인 가능합니다.**](https://github.com/limwoobin/blog-code-example/tree/master/spring-async)
+
+# __Apache Tomcat 설정에 대해 알아보자__
+
+안녕하세요 이번에는 스프링의 WAS 인 __Apache Tomcat__ 의 설정 옵션들  
+그리고 Thread 설정에 따라 어떻게 동작하는지 등에 대해 한번 알아보려합니다.
+
+## __Tomcat 의 설정 옵션__
+
+__application.yml__
+```yml
+server:
+  tomcat:
+    max-connections: 8192
+    accept-count: 100
+    threads:
+      max: 200
+      min-spare: 10
+```
+
+다음은 스프링 부트에서 톰캣을 설정에 대한 옵션입니다.  
+각 옵션별로 하나씩 알아보겠습니다.
+
+### __threads.max__
+생성할수있는 최대 thread 의 갯수이며 실제 Active User 수를 뜻합니다.  
+즉, 순간 처리가능한 트랜잭션의 수를 의미합니다.
+
+### __threads.min-spare__
+항상 활성화 되어있는(idle) 스레드 갯수입니다.
+
+### __accept-count__
+__maxConnections__ 이상의 요청이 들어왔을때 대기하는 대기열(Queue)의 길이입니다.  
+큐가 꽉 찼을 때 수신된 모든 요청은 거부됩니다. 
+
+해당 설정은 OS 에서 관리하는 설정이며 무시될 수도 있습니다.
+
+### __max-connections__
+서버가 수락하고 처리할 수 있는 최대 연결수를 의미합니다. 이 숫자에 도달하면 서버는 연결을 추가로 수락하지만 처리는 하지 않습니다.  
+처리 중인 연결 개수가 __maxConnections__ 아래로 떨어지면 다시 새 연결을 수락하고 처리하기 시작합니다.
+
+__maxConnections__ 에 연결이 가득 차더라도 운영체제는 __acceptCount__ 만큼 추가 연결을 허용합니다. 
+
+Http 의 KeepAlive 옵션을 사용하게되면 요청을 처리하지 않는 Connection 수도 유지되기에, 요청 처리 수보다 실제 연결되어있는 Connection 수가 높을 수 있습니다.
+
+NIO/NIO2의 경우에는 10000개, APR/native의 경우에는 8192개가 기본값입니다.
+
+
+
+<br />
+
+## __Http Connector__
+
+__Tomcat__ 서버는 __HttpConnector__ 를 통해 요청을 수신하고 처리합니다.  
+그리고 __Tomcat__ 버전별로 사용하는 __HttpConnector__ 가 상이한데요 아래와 같습니다.
+
+![tomcat-thread-image2](https://private-user-images.githubusercontent.com/28802545/354876315-8f80d4f0-0d04-4f6b-90ba-c7e46950fc39.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MjI3NDk5OTMsIm5iZiI6MTcyMjc0OTY5MywicGF0aCI6Ii8yODgwMjU0NS8zNTQ4NzYzMTUtOGY4MGQ0ZjAtMGQwNC00ZjZiLTkwYmEtYzdlNDY5NTBmYzM5LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA4MDQlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwODA0VDA1MzQ1M1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWM2ZTVhN2E2YTllZWQ3Y2MxMjRhM2MxOWRjNjNlY2I5N2RjNDlhNTcxNmVmZjQ2Y2FiOWY3NGU3ZTg0NTQ1NmImWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.58TDn61C9xH6xWdnK4FF1Bv6wvMDNPmpiKmZj0GbtEQ)
+
+### __BIO(Blocking I/O) Connector__
+
+요청이 들어와 TCP 커넥션이 생성되면 하나의 Thread 가 할당됩니다.  
+그리고 요청에 대해 응답하기까지 하나의 Thread 에서 처리되며 응답 이후 소켓 연결이 닫히고 나서야 Thread 는 Pool 에 반환됩니다.
+
+즉, 커넥션과 Thread 가 1:1 로 매핑됩니다.
+이는 Thread 가 Idle 상태로 있는 시간이 길어져서 낭비되는 시간이 많을 수 있습니다.
+
+만약 요청이 들어왔을때 할당할 수 있는 Idle Thread 가 없다면 요청은 Block 됩니다.
+
+### __NIO(Non Blocking I/O) Connector__
+
+BIO 와 달리 소켓 연결을 담당하는 __Poller__ 라는 Thread 가 존재합니다.  
+요청이 들어오면 __Poller__ 는 Socket 들을 캐시로 들고있다가 처리가 가능한 순간에만 Thread 를 할당합니다.
+
+그리고 __NIO Connector__ 는 Thread 는 응답을 보내면 바로 Pool 로 반환됩니다.  
+그렇기에 __BIO Connector__ 에 비해 Thread 가 Idle 상태로 있는 시간이 짧기에 효율적입니다.
+
+<br />
+<hr />
+
+## __Tomcat 설정옵션에 따른 테스트 시나리오__
+
+```
+SpringBoot version: 3.3.2
+Tomcat version: 10.1.26
+```
+
+Tomcat 은 __10.1.26__ 버전이기에 __NIOConnector__ 를 사용합니다.  
+(BIO Connector 는 Tomcat 9 버전부터 Deprecated 되었습니다)
+
+### 1. __ㅋㅋ__
+
+### 2. __ㅋㅋ__
+
+### 3. __ㅋㅋ__
+
+### 4. __ㅋㅋ__
+
+<br />
+<hr />
+
+## __Tomcat 스레드 갯수를 어떻게 설정해야할까?__
+
+어플리케이션의 성격과 요구사항 그리고 처리량에 따라 다르겠지만 다음 부분을 고민해보면 좋을것 같습니다.
+
+### CPU Bound, I/O Bound
+
+어플리케이션의 성격이 주로 어떤 작업을 하는지에 대해 고민해볼 수 있습니다.
+
+#### CPU Bound
+- CPU 연산에 의존하는 작업 (CPU Burst)
+- 머신 러닝 작업, 동영상 편집 작업 ..
+
+#### I/O Bound
+- I/O 작업을 요청하고 결과를 기다리는 작업 (I/O Burst)
+- DB 접근, 네트워크 요청, 파일 입출력 ..
+
+일반적으로 __CPU Bound__ 의 경우 대기시간이 거의 없기때문에 많인 스레드 수가 필요하지 않습니다.  
+그렇기에 코어수 만큼의 스레드 수가 있어도 충분합니다.
+
+__I/O Bound__ 의 경우 대기시간이 많기에 대기시간을 효율적으로 처리할만큼의 스레드 갯수가 있는게 작업을 더 효율적으로 처리할 수 있습니다.
+
+![tomcat-thread-image3](https://private-user-images.githubusercontent.com/28802545/354882088-5c236d79-4eec-4a73-9522-d65107e2bf10.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MjI3NTU3MzYsIm5iZiI6MTcyMjc1NTQzNiwicGF0aCI6Ii8yODgwMjU0NS8zNTQ4ODIwODgtNWMyMzZkNzktNGVlYy00YTczLTk1MjItZDY1MTA3ZTJiZjEwLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA4MDQlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwODA0VDA3MTAzNlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWZkMGFlZTgyYWU5ZWNjN2ExN2VhNzQzZmM4YzlhYTVjN2Q1OTc2ZDIwYTNhNDc5ZDY2Nzg2MTFkNzBiYzMwYzEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0._ekIwCZnicggP4inywOiw6RUmujK9mVEzZOlzHhLqtY)
+
+Brian Goetz 의 __Java Concurrency in Practice__ 라는 책에서 다음과 같은 공식을 권장합니다.
+
+여기서 대기시간은 스레드가 대기하는 시간과 I/O 작업시 대기하는 시간을 모두 포함합니다.  
+서비스 시간은 대기시간을 제외한 실제 작업이 수행되는 시간을 뜻합니다.
+
+### TPS 와 성능 테스트
+
+스레드 개수에 정답은 없으므로 가장 중요한것은 어플리케이션의 성격과 현재 서비스의 상황에 맞게 적정 스레드 개수를 찾는것이 중요하지 않을까 싶습니다.
+
+평소엔 잠잠하다가 특정 시간에만 TPS 가 급증하는 서비스도 있고, 전체적으로 적당량의 수치를 유지하는 서비스도 존재합니다.
+
+서비스 성격에 알맞는 TPS 와 AutoScaling 을 고려한 성능 테스트를 진행하며 서비스에 맞는 적정 스레드 개수를 찾아내는것이 가장 좋은 방법이라 생각합니다.
+
+감사합니다.
+
+<br />
+<hr />
+
+#### __reference__
+
+- https://tomcat.apache.org/tomcat-8.0-doc/config/http.html#Connector_Comparison
+- https://hudi.blog/tomcat-tuning-exercise/
+- https://velog.io/@jihoson94/BIO-NIO-Connector-in-Tomcat
+- https://bcho.tistory.com/788
+- https://code-lab1.tistory.com/269
