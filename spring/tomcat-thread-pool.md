@@ -1,6 +1,6 @@
-![tomcat-thread-image1]()
+![tomcat-thread-image1](https://private-user-images.githubusercontent.com/28802545/354904925-90ac9575-3926-4a46-bb13-24dbc00197a4.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MjI3Nzg1NzEsIm5iZiI6MTcyMjc3ODI3MSwicGF0aCI6Ii8yODgwMjU0NS8zNTQ5MDQ5MjUtOTBhYzk1NzUtMzkyNi00YTQ2LWJiMTMtMjRkYmMwMDE5N2E0LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA4MDQlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwODA0VDEzMzExMVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTY0MWE5YTQ3MWUyZWQ4MzM5NmE0MmQzYWNjZGFjYjZlZGIzZmY4ZWVhZjYxZTFkMTE3NDZkMTk2OWQ4OWM4YjQmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.xEnWHIc5_S1KcPHJrwSnaOFG-oT5zG4oS7z1hXND-kc)
 
-#### [**예제 및 테스트 코드는 github 에서 확인 가능합니다.**](https://github.com/limwoobin/blog-code-example/tree/master/spring-async)
+#### [**예제 및 테스트 코드는 github 에서 확인 가능합니다.**](https://github.com/limwoobin/blog-code-example/tree/master/tomcat-thread-pool)
 
 # __Apache Tomcat 설정에 대해 알아보자__
 
@@ -38,15 +38,29 @@ __maxConnections__ 이상의 요청이 들어왔을때 대기하는 대기열(Qu
 
 ### __max-connections__
 서버가 수락하고 처리할 수 있는 최대 연결수를 의미합니다. 이 숫자에 도달하면 서버는 연결을 추가로 수락하지만 처리는 하지 않습니다.  
-처리 중인 연결 개수가 __maxConnections__ 아래로 떨어지면 다시 새 연결을 수락하고 처리하기 시작합니다.
+
+처리 중인 연결 개수가 __maxConnections__ 아래로 떨어지면 다시 새 연결을 수락하고 처리하기 시작합니다.  
+(주의할 점은 이 수는 실제 연결된 Connection 수가 아닌 Socket File Descriptor 의 수 입니다.)
 
 __maxConnections__ 에 연결이 가득 차더라도 운영체제는 __acceptCount__ 만큼 추가 연결을 허용합니다. 
 
-Http 의 KeepAlive 옵션을 사용하게되면 요청을 처리하지 않는 Connection 수도 유지되기에, 요청 처리 수보다 실제 연결되어있는 Connection 수가 높을 수 있습니다.
+Socket 은 Connection 이 끝난 후 바로 반환되지 않고 Connection 종료 후 FIN 신호, TIME_WAIT 시간을 거쳐서 Socket 의 Connection 을 종료합니다.
+
+그리고 Http 의 KeepAlive 옵션을 사용하게되면 요청을 처리하지 않는 Connection 수도 유지되기에, 요청 처리 수보다 실제 연결되어있는 Connection 수가 높을 수 있습니다.
+
+이러한 이유때문에 __maxConnections__ 은 넉넉하게 설정하는것이 좋습니다.
 
 NIO/NIO2의 경우에는 10000개, APR/native의 경우에는 8192개가 기본값입니다.
 
+![tomcat-thread-image9](https://private-user-images.githubusercontent.com/28802545/354901245-87c72bbf-497b-4b8c-a144-952e1f0ef9f3.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MjI3NzgzNzcsIm5iZiI6MTcyMjc3ODA3NywicGF0aCI6Ii8yODgwMjU0NS8zNTQ5MDEyNDUtODdjNzJiYmYtNDk3Yi00YjhjLWExNDQtOTUyZTFmMGVmOWYzLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA4MDQlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwODA0VDEzMjc1N1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWU2OTkyZWUyYmNiYzg3OWE2YTQyYmY4MDYxNjczYjI4YTBkNDFmZjVhOWJmMTdiZjk1MGU1MDQ5YWJkZTllOWEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.CagXvs4oPBiiTVQ20Is7_uNOgIQyAi3-DLddNg4yfeQ)
 
+정리하자면 __Tomcat__ 의 스레드 풀 매커니즘은 다음과 같습니다.
+
+1) __Tomcat__ 서버가 처음 실행될때 스레드 풀에 __min-spare__ 만큼의 유휴 스레드를 생성합니다.
+2) 이후 요청이 유휴 스레드보다 많은 요청이 들어오게 되면 maxConnections 이 증가하고 요청을 처리할 스레드 수가 증가합니다. (최대 maxThreads 만큼 증가)
+3) 요청이 많아 maxConnections 가 가득차고 이후 추가 요청이 들어온다면 __acceptCount__ 만큼 추가로 연결을 허용합니다.
+
+Java 의 __ThreadPoolExecutor__ 의 경우 __queueSize__ 가 가득차면 이후 스레드가 증가하는것과는 다른 방식입니다.
 
 <br />
 
@@ -76,9 +90,8 @@ BIO 와 달리 소켓 연결을 담당하는 __Poller__ 라는 Thread 가 존재
 그렇기에 __BIO Connector__ 에 비해 Thread 가 Idle 상태로 있는 시간이 짧기에 효율적입니다.
 
 <br />
-<hr />
 
-## __Tomcat 설정옵션에 따른 테스트 시나리오__
+## __Tomcat 설정옵션에 따른 테스트__
 
 ```
 SpringBoot version: 3.3.2
@@ -88,13 +101,162 @@ Tomcat version: 10.1.26
 Tomcat 은 __10.1.26__ 버전이기에 __NIOConnector__ 를 사용합니다.  
 (BIO Connector 는 Tomcat 9 버전부터 Deprecated 되었습니다)
 
-### 1. __ㅋㅋ__
+모든 테스트는 10개의 스레드를 동시에 요청하는것으로 진행하겠습니다.
 
-### 2. __ㅋㅋ__
 
-### 3. __ㅋㅋ__
+__ThreadPoolController.java__
+```java
+@Slf4j
+@RestController
+@RequestMapping(value = "/")
+public class ThreadPoolController {
 
-### 4. __ㅋㅋ__
+  @GetMapping
+  public ResponseEntity<String> api() {
+    try {
+      Thread.sleep(5000);
+      log.info("http call");
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+
+    return new ResponseEntity<>("OK", HttpStatus.OK);
+  }
+}
+```
+
+요청이 시간의 흐름에 따라 어떻게 처리되는지 확인하기 위해 컨트롤러에서 5초간 sleep 을 하도록 하겠습니다.
+
+__ThreadPoolTest.java__
+```java
+public class ThreadPoolTest {
+
+  private static final HttpClient httpClient = HttpClient.newBuilder()
+    .version(HttpClient.Version.HTTP_1_1)
+    .build();
+
+  @Test
+  void test() {
+    final HttpRequest request = HttpRequest.newBuilder()
+      .uri(URI.create("http://127.0.0.1:8080"))
+      .build();
+
+    Supplier<HttpResponse<String>> task = () -> {
+      try {
+        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    };
+
+    List<CompletableFuture<HttpResponse<String>>> futures = new ArrayList<>();
+    for (int i = 0; i < 10; i++) {
+      CompletableFuture<HttpResponse<String>> future = CompletableFuture.supplyAsync(task);
+      futures.add(future);
+    }
+
+    CompletableFuture<Void> combinedFuture = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+    combinedFuture.join();
+  }
+
+}
+
+```
+
+### 1. __maxConnections 과 aceeptCount, maxThreads 가 모두 충분한 경우__
+
+```yml
+server:
+  tomcat:
+    max-connections: 10
+    accept-count: 10
+    threads:
+      max: 10
+```
+
+![tomcat-thread-image3](https://private-user-images.githubusercontent.com/28802545/354899227-2010c402-d68b-413b-b851-1b42c21a4f67.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MjI3NzIyMjcsIm5iZiI6MTcyMjc3MTkyNywicGF0aCI6Ii8yODgwMjU0NS8zNTQ4OTkyMjctMjAxMGM0MDItZDY4Yi00MTNiLWI4NTEtMWI0MmMyMWE0ZjY3LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA4MDQlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwODA0VDExNDUyN1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTZmZDBlZmUxZDEwYmE4NjBkYmQ3ZGNiZGE1MjE0YjcyM2QzZDlmYjUwYzM4ZjRmNTk1M2U1M2NhOTgyMjkyNGYmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.BkSvw_YAWlX53kE0_ePEXGUA8vYrnT-2XaMMr-2Jv3E)
+
+10개의 요청 모두 한번에 처리되었습니다.
+
+### 2. __acceptCount 는 부족하고 __maxConnections 와 maxThreads 가 충분한 경우__
+
+```yml
+server:
+  tomcat:
+    max-connections: 10
+    accept-count: 2
+    threads:
+      max: 10
+```
+
+![tomcat-thread-image4](https://private-user-images.githubusercontent.com/28802545/354899797-ff0ea6ff-140f-4bf1-9bb2-62a8760e161f.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MjI3NzI5NTIsIm5iZiI6MTcyMjc3MjY1MiwicGF0aCI6Ii8yODgwMjU0NS8zNTQ4OTk3OTctZmYwZWE2ZmYtMTQwZi00YmYxLTliYjItNjJhODc2MGUxNjFmLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA4MDQlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwODA0VDExNTczMlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTZlMWI0Yjc5NDYyYTk4ZTMzMWIyMDNiZDM4ZTU1YmNlZjhjMzk3MWNjYTdiNWI5NmFjZGUxYWYxNmI4NmVmYmUmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.znvYRp518QWUf2Nom4ROLEj2SiPMHq8Gr9AjkQuJcww)
+
+__maxConnections__ 의 수가 10개의 요청은 한번에 처리 가능한 수여서 모두 한번에 처리된것을 확인할 수 있습니다.
+
+### 3. __maxConnections 는 부족하고 aceeptCount 와 maxThreads 가 충분한 경우__
+
+```yml
+server:
+  tomcat:
+    max-connections: 2
+    accept-count: 10
+    threads:
+      max: 10
+```
+
+![tomcat-thread-image5](https://private-user-images.githubusercontent.com/28802545/354899628-349dc530-ed7f-4f38-8109-98b2906d69e9.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MjI3NzI3NjUsIm5iZiI6MTcyMjc3MjQ2NSwicGF0aCI6Ii8yODgwMjU0NS8zNTQ4OTk2MjgtMzQ5ZGM1MzAtZWQ3Zi00ZjM4LTgxMDktOThiMjkwNmQ2OWU5LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA4MDQlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwODA0VDExNTQyNVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWVlZDEzYzUyYWI1ZjBjMWY1NjdlOTlmZWJkNTZjYTg5MjI0M2FiODE0MjdhNmMxYTViZjE3M2YxOWU2NWRhOWImWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.lpqQu7VSrhZVsHuv-O9BwMn1ohhWOSMDxOMks9aWMhk)
+
+65초 간격으로 두개의 요청이 들어온것을 확인할 수 있습니다. 
+
+10개의 요청이 오면 우선 __maxConnections__ 에 두개의 요청이 Queue 로 들어가고 나머지 요청은 __acceptCount__ 에서 대기하게 됩니다. 
+
+그리고 두개가 처리 완료되었다면 __acceptCount__ 에서 __maxConnections__ 로 두개의 요청이 다시 이동해야 합니다.  
+그렇다면 5초간격으로 수행되어야 할것같은데 그렇지 않았습니다.
+
+왜 이렇게 동작한걸까요??
+
+__maxConnections__ 은 요청의 Connection 이 끝나더라도 Socket 이 바로 종료되지 않는다고 위에서 이야기 했습니다.
+
+Socket 은 Connection 연결해제 후 종료되기까지 FIN 신호 및 __TIME_WAIT__ 시간을 거쳐서 종료되는데요.  
+이때 __TIME_WAIT__ 이 60초 입니다.
+
+그리고 컨트롤러에서 걸어놓은 sleep 시간은 5초입니다. 그래서 __maxConnections__ 에 대해 Socket 이 종료되고 다음 요청에 대한 로그가 찍히기 까지 65초의 간격을 두고 요청을 처리하게 된겁니다.
+
+### 4. __maxConnections, acceptCount 모두 부족하고 maxThreads 는 충분한 경우__
+
+```yml
+server:
+  tomcat:
+    max-connections: 5
+    accept-count: 2
+    threads:
+      max: 10
+```
+
+![tomcat-thread-image6](https://private-user-images.githubusercontent.com/28802545/354903985-dc8e6209-6be8-4ec0-8c68-cd92dbd2c891.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MjI3Nzc1MTIsIm5iZiI6MTcyMjc3NzIxMiwicGF0aCI6Ii8yODgwMjU0NS8zNTQ5MDM5ODUtZGM4ZTYyMDktNmJlOC00ZWMwLThjNjgtY2Q5MmRiZDJjODkxLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA4MDQlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwODA0VDEzMTMzMlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTY1MGJhYmFlZjQyZDg5MmE1YWNjYTAzY2QzNmExOTUzYTJmMTVlMWFiOTY5NDNiNGIyNzc4MDM0NjYwYTU4NmMmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.oK2xUzmlxKgJCfTgXC13uDqTw-lg9d0iIEQHaQp1H98)
+
+처음 __maxConnections__ 만큼 5개의 요청을 처리하고 이후 __acceptCount__ 만큼의 2개의 요청을 처리한것을 확인할 수 있습니다.
+
+총 요청은 10개이지만 수신할 수 있는 큐의 사이즈는 총 7개로 제한되었으니 7개의 요청만 처리된것입니다.
+
+나머지 요청에 대해서는 __IOException__ 이 발생했습니다.
+
+![tomcat-thread-image7](https://private-user-images.githubusercontent.com/28802545/354904030-e084aaf2-cb48-44a7-9d8f-8b16aae3034e.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MjI3NzgwMDMsIm5iZiI6MTcyMjc3NzcwMywicGF0aCI6Ii8yODgwMjU0NS8zNTQ5MDQwMzAtZTA4NGFhZjItY2I0OC00NGE3LTlkOGYtOGIxNmFhZTMwMzRlLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA4MDQlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwODA0VDEzMjE0M1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTdjOTgzZmE1MmY0ZWM2MWM5MzE5NmEwZDNkZDUyMTk3ODM5N2RkZTU5NWRiN2EzYTAyOGNkNWQxYjg2MGU5ZTImWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.OWOYCPwqeXPpzkMpbAmS5X90SS5Krru2HALie1UBQ4A)
+
+### 5. __maxConnections, acceptCount 는 충분하지만 maxThreads 가 부족한 경우__
+
+```yml
+server:
+  tomcat:
+    max-connections: 10
+    accept-count: 10
+    threads:
+      max: 2
+```
+
+![tomcat-thread-image8](https://private-user-images.githubusercontent.com/28802545/354904570-d811bdec-e381-43f0-9316-d53e50a43442.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MjI3NzgxOTcsIm5iZiI6MTcyMjc3Nzg5NywicGF0aCI6Ii8yODgwMjU0NS8zNTQ5MDQ1NzAtZDgxMWJkZWMtZTM4MS00M2YwLTkzMTYtZDUzZTUwYTQzNDQyLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA4MDQlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwODA0VDEzMjQ1N1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWMyOTVkYjliNGJlNzk1ZjU2OWZmOWQzMWIwMjczZGJlNDNmZGZlYjQ1MTk2YWMxNWVmODY4OWI0NTkxZDdhOGYmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.txe6wmSuGx7fiCrXLmMXoWTo6bPNCOju4UoyGDSnMbQ)
+
+__maxThreads__ 만큼 5초 간격으로 10개의 요청을 모두 처리한것을 확인할 수 있습니다.
 
 <br />
 <hr />
