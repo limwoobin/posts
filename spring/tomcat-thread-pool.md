@@ -218,9 +218,54 @@ server:
 __maxConnections__ 은 요청의 Connection 이 끝나더라도 Socket 이 바로 종료되지 않는다고 위에서 이야기 했습니다.
 
 Socket 은 Connection 연결해제 후 종료되기까지 FIN 신호 및 __TIME_WAIT__ 시간을 거쳐서 종료되는데요.  
-이때 __TIME_WAIT__ 이 60초 입니다.
+이때 __TIME_WAIT__ 이 과정이 60초가 소요된 것입니다.
 
 그리고 컨트롤러에서 걸어놓은 sleep 시간은 5초입니다. 그래서 __maxConnections__ 에 대해 Socket 이 종료되고 다음 요청에 대한 로그가 찍히기 까지 65초의 간격을 두고 요청을 처리하게 된겁니다.
+
+#### __WireShark 로 패킷 확인해보기__
+
+이 과정을 좀 더 자세히 보기 위해 __WireShark__ 를 이용해 패킷이 어떻게 요청되고 반환되는지 확인해보겠습니다.
+
+__52546__ port 를 기준으로 따라보겠습니다.
+
+1) __TCP 연결 요청__
+
+![tomcat-thread-image10](https://private-user-images.githubusercontent.com/28802545/354984465-e1226ada-4709-476e-9fd2-a0fe63e0cac2.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MjI4Mzc3MDMsIm5iZiI6MTcyMjgzNzQwMywicGF0aCI6Ii8yODgwMjU0NS8zNTQ5ODQ0NjUtZTEyMjZhZGEtNDcwOS00NzZlLTlmZDItYTBmZTYzZTBjYWMyLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA4MDUlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwODA1VDA1NTY0M1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTc0NDEwYzBhMWYwMTNhYWQ1ODk3MTllZTQyMzQ0NGQzYTcwNTcyNjE5Mzk0ZjhjODYyODhjY2Q2NzE1YWZkYTUmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.OvuNWTBkEJ8qKlQZ8jZd4FFGEBaejTDaDtlZau7eZOQ)
+
+__52546__ Port 가 __8080__ Port 에게 TCP 요청을 하기 위해 __3-Way-Handshake__ 를 진행하는것을 확인할 수 있습니다.  
+이때 시간은 4.43초 입니다.
+
+2) __HTTP 요청__
+
+![tomcat-thread-image11](https://private-user-images.githubusercontent.com/28802545/354988078-a2bd99e2-559f-4f3b-8c53-2f496e1d5126.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MjI4Mzg2OTAsIm5iZiI6MTcyMjgzODM5MCwicGF0aCI6Ii8yODgwMjU0NS8zNTQ5ODgwNzgtYTJiZDk5ZTItNTU5Zi00ZjNiLThjNTMtMmY0OTZlMWQ1MTI2LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA4MDUlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwODA1VDA2MTMxMFomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTg1MzdjZDY2NmU5YjQ5YjQ5Nzk2NDg4MDk0NDVlYjY5OGMwMzg0ODMyZGU3YTI5OGZkN2VjMDEyMjIyMWE1ODUmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.3EV-KvmsL-T-MqQXvZBwDFVymDRKQwm9IfdkeYq5bZ4)
+
+TCP 연결에 성공했으니 이후 HTTP 요청을 진행합니다. 이후 서버는 요청을 잘 받았다는 신호로 ACK 를 응답합니다.  
+이때 시간은 4.44초 입니다.
+
+3) __HTTP 응답 반환 및 TCP 연결 해제 요청__
+
+![tomcat-thread-image12](https://private-user-images.githubusercontent.com/28802545/354983833-57a6aafd-6344-432d-ab39-1a0122b655e9.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MjI4MzgwMjUsIm5iZiI6MTcyMjgzNzcyNSwicGF0aCI6Ii8yODgwMjU0NS8zNTQ5ODM4MzMtNTdhNmFhZmQtNjM0NC00MzJkLWFiMzktMWEwMTIyYjY1NWU5LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA4MDUlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwODA1VDA2MDIwNVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTRkMWE1MGRmNzAzZGY1OWUxNGY3ODdhYTRmMDIzYjA4MDQ3OWY3OGE2NmZhZjkyYTA3MzQ3ZmJiOTk0ZmQ0YjImWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.iTgET0eqYABrYiXbFL8K0SqVfkupK2p77G2Jxy9YADY)
+
+컨트롤러에서 5초간 Sleep 후에 HTTP 응답을 반환합니다.  
+이때 시간은 요청 후 약 5초가 지난 9.46초 입니다.
+
+그리고 마지막 패킷로그를 보시면 응답을 받자마자 TCP 연결 해제를 위해 서버에게 ACK 신호를 전달합니다.
+
+이 과정이 __4-Way-Handshake__ 의 시작입니다.
+
+4) __TCP 연결 해제__
+
+![tomcat-thread-image13](https://private-user-images.githubusercontent.com/28802545/354984182-a801917d-6775-44cc-97ae-2ab09df2d5c1.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MjI4MzkxMjUsIm5iZiI6MTcyMjgzODgyNSwicGF0aCI6Ii8yODgwMjU0NS8zNTQ5ODQxODItYTgwMTkxN2QtNjc3NS00NGNjLTk3YWUtMmFiMDlkZjJkNWMxLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA4MDUlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwODA1VDA2MjAyNVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWQxZWE2NzczOGE0MWNmNzI0NzcwMjI2ZjY3NTc0NGU1ZDU5OGEyZDViYjQzM2ZiZGM0YjI1ZGY1YmI5ZGQ4YjUmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.hSJKxqWj2zXtXvx5wc27xqICUtwoppIAoR4WYdpQfec)
+
+TCP 연결 해제를 위해 __4-Way-Handshake__ 를 진행합니다.  
+연결해제 요청을 9.46초에 보냈지만 __FIN, ACK__ 응답이 60초 뒤인 69초에 온것을 볼 수 있습니다.
+
+이때 서버는 자신의 통신이 끝날때까지 기다리는 __TIME_WAIT__ 상태를 거치게 되는데 이 시간이 60초가 걸려서 그렇습니다.
+
+클라이언트는 __FIN,ACK__ 응답을 받고 확인했다는 ACK 를 서버에게 보냅니다.  
+그리고 서버는 ACK 신호를 받고 소켓을 종료합니다.
+
+<br />
 
 ### 4. __maxConnections, acceptCount 모두 부족하고 maxThreads 는 충분한 경우__
 
