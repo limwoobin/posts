@@ -1,6 +1,6 @@
 #### [**예제 및 테스트 코드는 github 에서 확인 가능합니다.**](https://github.com/limwoobin/blog-code-example/tree/master/orm-bulk-insert)
 
-![bulk-insert-image1]()
+![bulk-insert-image1](https://private-user-images.githubusercontent.com/28802545/398151813-42de77f4-33de-406d-8e50-65c32cf03dbc.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MzQ5NTQ4NDksIm5iZiI6MTczNDk1NDU0OSwicGF0aCI6Ii8yODgwMjU0NS8zOTgxNTE4MTMtNDJkZTc3ZjQtMzNkZS00MDZkLThlNTAtNjVjMzJjZjAzZGJjLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDEyMjMlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQxMjIzVDExNDkwOVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWJhMzQwMzVkZTY1YjdlM2MwNDhiZThlZTgzNDI0MGU4NjQ1MmY0NzE3MGEwMzQwODM4ZjU2OGQ1MzYyZGNiMzQmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.MDymB0vgS-7-MuIB9n2Ysa_47DX-HsqoIgQ_MAyhD6g)
 
 <br />
 
@@ -740,7 +740,7 @@ BulkInsert 의 경우 데이터가 많아지면 해당 패킷 사이즈를 넘�
 show global variables like 'max_allowed_packet'
 ```
 
-지금까지 읽어주셔서 감사합니다!~
+지금까지 읽어주셔서 감사합니다!
 
 <br />
 
